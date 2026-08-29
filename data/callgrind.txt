@@ -1,0 +1,5 @@
+s1 /tmp/empty.txt: ==4585== I   refs:      232,477
+s1 corpus/c1/c1_20000.txt: ==4587== I   refs:      832,341
+s2en corpus/c1/c1_20000.txt: ==4589== I   refs:      686,187
+s2c2 corpus/c2/c2_20000.txt: ==4591== I   refs:      689,356
+s2c3 corpus/c3/c3_20000.txt: ==4593== I   refs:      731,533

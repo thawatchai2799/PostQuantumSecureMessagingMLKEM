@@ -1,0 +1,1 @@
+AES-256-GCM 20kB isolated: median 2.4 µs (n=100)
