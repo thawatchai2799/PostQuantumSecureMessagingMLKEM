@@ -149,3 +149,20 @@ arm-none-eabi-gcc -Os -mcpu=cortex-m4 -c codec.c -o codec_arm.o \
 ## License
 
 MIT — see `LICENSE`.
+
+## Extension: KEM parameter-set sweep and C4 robustness corpus
+
+Added after the initial release (all verified cross-machine):
+
+- `kem_sweep.py` — benchmarks ML-KEM-512/768/1024 session costs with the
+  same methodology as `harness.py` (n=100, warm-up 5, per-op
+  `perf_counter_ns`). Fails fast with rebuild instructions if the local
+  liboqs build lacks a parameter set. Output: `data/results_kem_sweep.csv`.
+- `make_c4_modern.py` — seeded generator (seed 20260830) for corpus C4:
+  modern chat-style English messages. Writes `s2_train_c4.txt` (30,000-char
+  pre-shared training split) and `corpus_c4/c4_{500,1000,5000,20000}.txt`
+  (disjoint held-out test split). Kept outside `corpus/` on purpose:
+  `harness.py` auto-iterates every `corpus/*` subdirectory.
+- `eval_c4.py` — deterministic bits/char of all five scheme variants on C4
+  with per-cell round-trip verification. Output: `data/results_c4.csv`
+  (byte-identical across machines; verified).

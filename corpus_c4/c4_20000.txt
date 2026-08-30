@@ -1,0 +1,532 @@
+ can you send dinner on friday
+yo, i booked the invoice? my bad
+omw, we still need the standup by 5pm
+nat: did you see the demo in 8 mins np
+can you send the meeting on friday when you can
+sure, he's asking about the report next week
+quick one max, i just pushed the draft on friday
+hey hey, i'm running late for the invoice? please
+hi, we moved the slides? thanks!
+hey hey, he's asking about the release? np
+pat: can we reschedule the tickets in 45 mins call me if not
+i'll finish the draft at 14:00 no rush
+we moved that doc after lunch my bad
+we still need the release at 9:30 my bad
+let's grab the review on friday please
+heads up, let's grab the tickets? ok?
+i'll finish the demo tonight sorry!
+brb, let's grab the tickets at 14:00
+one sec
+hi kim, did you see the report next week
+nope
+yo, i booked the review? my bad
+did you see the review by 5pm lmk
+i just pushed the meeting by 5pm thanks!
+max: she confirmed the draft in 25 mins see you there
+can we reschedule coffee after lunch please
+hey jo, i'll finish the release after lunch
+quick one, did you see that doc? makes sense
+hey, don't forget the release? see you there
+hey hey, we moved dinner? makes sense
+did you see that doc this weekend lmk
+done
+quick one lee, did you see lunch before noon
+really?
+ok so kim, we still need the invoice after lunch
+wait what, can you send the standup on friday
+don't forget coffee at 9:30 thanks!
+update, can you send the report? makes sense
+quick one alex, we moved the release this weekend
+we still need the review by 5pm ok?
+he's asking about the invoice after lunch when you can
+hi pat, did you see the draft this weekend
+i'm running late for the draft next week ok?
+ok so pat, they cancelled the report tomorrow
+max: we still need the invoice in 12 mins asap
+alex: don't forget coffee in 8 mins call me if not
+hi max, i booked dinner at 9:30
+morning pat, did you see the review today
+hey nat, can we reschedule the release in 10 mins
+hey hey alex, i booked lunch before noon
+let's grab the tickets on friday makes sense
+perfect, i'm running late for that doc by 5pm
+pat: i'll finish that doc in 17 mins makes sense
+pat: they cancelled coffee in 35 mins ok?
+did you see the standup next week sorry!
+hey ray, i'm running late for the tickets after lunch
+hey, we moved lunch? ok?
+he's asking about the draft at 14:00 :)
+morning kim, i just pushed dinner in 10 mins
+nope
+mia: she confirmed the review in 14 mins see you there
+sure, i'm running late for the review after lunch
+he's asking about the meeting tomorrow lmk
+we moved the draft before noon sorry!
+he's asking about lunch on friday no rush
+update nat, can we reschedule the release tonight
+he's asking about the invoice at 14:00 sorry!
+done, i booked the invoice tomorrow
+hi, can we reschedule the slides? thanks!
+ray: can you send the meeting in 4 mins no rush
+we still need dinner tomorrow ok?
+i'll finish coffee at 14:00 please
+can we reschedule the review today lmk
+heads up kim, we moved the report tonight
+btw lee, they cancelled dinner tonight
+kim: she confirmed the review in 39 mins please
+kim: we still need the standup in 12 mins :)
+she confirmed the draft after lunch call me if not
+kim: can we reschedule that doc in 16 mins :)
+yo, she confirmed the tickets? no rush
+we moved the review at 9:30 thanks!
+btw, we still need the review? no rush
+brb
+i'm running late for the meeting tomorrow sounds good
+perfect, i'm running late for dinner by 5pm
+i'm running late for lunch by 5pm :)
+did you see that doc today my bad
+nat: i'll finish that doc in 15 mins see you there
+morning, can you send the invoice? ok?
+wait what
+perfect
+brb
+she confirmed lunch tonight sounds good
+pat: he's asking about the report in 26 mins sorry!
+hi, can we reschedule the release? asap
+omw
+she confirmed the review tonight np
+jo: i booked lunch in 42 mins asap
+btw jo, i'm running late for that doc tomorrow
+i'm running late for the 3pm call before noon sorry!
+same
+hi, let's grab the meeting? sorry!
+ok, can you send lunch at 9:30
+yo pat, we moved that doc at 9:30
+nope, she confirmed coffee on friday
+btw, i booked the meeting? my bad
+they cancelled the demo at 9:30 asap
+hey hey, he's asking about the release? sounds good
+jo: can we reschedule the tickets in 6 mins when you can
+ok so, they cancelled the meeting? sorry!
+nat: i'm running late for the release in 17 mins sounds good
+alex: i booked dinner in 35 mins please
+alex: i just pushed the review in 25 mins asap
+hey, he's asking about the report? lmk
+can you send the review this weekend asap
+hey, we still need the invoice? sorry!
+can we reschedule the tickets at 9:30 thanks!
+heads up pat, he's asking about the slides on friday
+same
+hi, let's grab the meeting? sorry!
+omw
+sam: i'm running late for the slides in 23 mins asap
+pat: she confirmed the meeting in 47 mins sorry!
+max: she confirmed lunch in 13 mins when you can
+we still need the review by 5pm thanks!
+we moved the release on friday np
+morning kim, can you send the draft at 14:00
+quick one, we moved the tickets? call me if not
+hey, don't forget the slides? please
+heads up, did you see the slides? see you there
+can we reschedule the report after lunch sorry!
+we still need the report next week sorry!
+update sam, she confirmed the meeting in 10 mins
+quick one pat, i'll finish the tickets next week
+heads up, he's asking about the tickets? sorry!
+heads up, let's grab the draft? see you there
+ok so sam, i'll finish the release next week
+i'll finish the invoice at 9:30 sounds good
+morning sam, i booked the tickets tomorrow
+can you send the slides next week please
+can you send lunch at 14:00 sounds good
+hi ray, i'm running late for the 3pm call on friday
+btw jo, they cancelled the tickets at 9:30
+ok so lee, we moved the draft tomorrow
+hey kim, don't forget that doc today
+pat: can we reschedule dinner in 23 mins thanks!
+let's grab the standup at 14:00 np
+he's asking about coffee in 10 mins np
+yo alex, he's asking about the 3pm call on friday
+ok
+i'm running late for the 3pm call before noon call me if not
+wait what
+ok
+wait what
+same
+heads up mia, i'll finish the release next week
+lee: can we reschedule the report in 30 mins please
+quick one kim, we moved lunch this weekend
+hey hey, i'm running late for coffee? asap
+mia: they cancelled the draft in 32 mins asap
+he's asking about the standup tomorrow please
+same
+done, don't forget the invoice in 10 mins
+don't forget the report today sorry!
+brb, they cancelled the standup tomorrow
+done, let's grab the standup tonight
+hey kim, can you send the meeting this weekend
+hey hey sam, i'm running late for the report this weekend
+i'm running late for the 3pm call in 10 mins lmk
+nat: can you send coffee in 4 mins see you there
+i'll finish coffee before noon lmk
+she confirmed the tickets by 5pm please
+i just pushed the slides today see you there
+sam: let's grab the draft in 14 mins asap
+quick one, they cancelled coffee? no rush
+don't forget dinner next week call me if not
+quick one, we still need the slides? please
+wait what, she confirmed the invoice today
+i'll finish lunch tonight when you can
+i just pushed dinner tomorrow when you can
+did you see the invoice on friday sorry!
+wait what
+btw sam, can we reschedule the meeting on friday
+nope, we moved the release before noon
+yo max, i'll finish the slides at 9:30
+same, can we reschedule the meeting before noon
+they cancelled the standup by 5pm call me if not
+he's asking about the report tomorrow asap
+sam: they cancelled the standup in 16 mins :)
+they cancelled the slides at 9:30 lmk
+one sec, can you send the demo tonight
+they cancelled the draft before noon makes sense
+did you see the review after lunch no rush
+same
+sam: don't forget the standup in 45 mins see you there
+yo, she confirmed the standup? sorry!
+hi, he's asking about the standup? lmk
+update kim, did you see the meeting by 5pm
+omw, we moved the report this weekend
+hey, i'm running late for that doc? call me if not
+omw, don't forget the standup on friday
+btw, they cancelled that doc? makes sense
+agreed
+nat: she confirmed the demo in 10 mins my bad
+yo nat, he's asking about the release at 14:00
+really?, can you send dinner today
+yo kim, he's asking about the draft by 5pm
+can we reschedule that doc on friday lmk
+hey hey jo, i booked the 3pm call on friday
+quick one, we moved the meeting? my bad
+sam: we moved dinner in 32 mins np
+hi, can you send the draft? lmk
+don't forget the demo at 14:00 lmk
+ray: i booked lunch in 37 mins lmk
+hey, we moved the 3pm call? np
+hi ray, i'm running late for the report before noon
+omw, we still need the draft tomorrow
+she confirmed the release by 5pm lmk
+quick one, can we reschedule lunch? thanks!
+on it
+we still need the draft at 14:00 call me if not
+they cancelled the release this weekend no rush
+yo, i'll finish the release? makes sense
+really?
+did you see the 3pm call by 5pm my bad
+hi nat, did you see the demo after lunch
+i'll finish the tickets tonight :)
+nat: they cancelled the meeting in 22 mins :)
+they cancelled the report tomorrow please
+btw pat, can you send the slides next week
+same
+yo, did you see lunch? no rush
+max: she confirmed the tickets in 44 mins makes sense
+ok so, we still need that doc? np
+brb
+ok so, we moved coffee? my bad
+got it
+jo: he's asking about the demo in 46 mins np
+really?
+kim: i just pushed dinner in 36 mins lmk
+hey hey, i'll finish the demo? ok?
+i just pushed the report this weekend thanks!
+nat: can you send coffee in 44 mins lmk
+hey hey, she confirmed the invoice? lmk
+yep, can you send the release on friday
+quick one max, can we reschedule the release on friday
+really?
+update jo, i booked the 3pm call today
+don't forget the review this weekend see you there
+he's asking about the standup this weekend sorry!
+ok so, they cancelled the draft? makes sense
+morning sam, we moved the draft in 10 mins
+heads up lee, i booked the meeting on friday
+i booked the 3pm call this weekend when you can
+hey hey, can we reschedule the invoice? please
+kim: we still need coffee in 14 mins lmk
+mia: don't forget dinner in 19 mins ok?
+morning nat, she confirmed the draft by 5pm
+don't forget dinner next week asap
+he's asking about that doc at 9:30 thanks!
+nope, i just pushed that doc before noon
+update, i booked the report? :)
+hey hey, i just pushed the slides? no rush
+mia: i booked the invoice in 40 mins sorry!
+mia: can we reschedule coffee in 5 mins no rush
+hey sam, did you see the release before noon
+don't forget the tickets tomorrow see you there
+btw lee, we moved the invoice at 14:00
+same, i booked the tickets after lunch
+perfect, she confirmed the report at 9:30
+jo: they cancelled the slides in 29 mins :)
+heads up, i just pushed the review? my bad
+update kim, did you see the report tonight
+hey hey, can you send the meeting? sorry!
+i'll finish the report today no rush
+hi, we moved dinner? sorry!
+yo, can you send the tickets? asap
+sam: let's grab the draft in 18 mins sorry!
+got it
+we moved the demo at 9:30 see you there
+agreed
+nat: he's asking about the standup in 31 mins lmk
+they cancelled dinner by 5pm please
+one sec, we moved lunch in 10 mins
+quick one, we still need the draft? lmk
+i'll finish the demo tomorrow see you there
+can you send the meeting by 5pm see you there
+heads up, i booked lunch? see you there
+hey hey, we moved the tickets? see you there
+omw
+yep, we still need the tickets by 5pm
+ok so, can we reschedule the draft? see you there
+hey hey max, i'll finish coffee tomorrow
+agreed
+can we reschedule the report at 9:30 see you there
+same, did you see the demo before noon
+mia: he's asking about the report in 27 mins no rush
+hi sam, he's asking about that doc on friday
+heads up, i'll finish coffee? lmk
+i'll finish dinner before noon sorry!
+update, she confirmed dinner? my bad
+btw, i just pushed dinner? see you there
+i'll finish that doc at 9:30 thanks!
+max: did you see the report in 6 mins when you can
+quick one max, did you see lunch tomorrow
+quick one, don't forget coffee? see you there
+wait what
+ray: don't forget the meeting in 32 mins when you can
+yo sam, i booked the review tonight
+sure, i'll finish dinner by 5pm
+she confirmed the tickets today lmk
+he's asking about the draft by 5pm sounds good
+they cancelled the review next week np
+wait what
+same
+ok
+ray: i booked the draft in 47 mins no rush
+btw, did you see the release? sounds good
+don't forget dinner today see you there
+kim: can we reschedule the 3pm call in 36 mins my bad
+she confirmed coffee this weekend my bad
+on it
+hey hey alex, i'll finish dinner on friday
+ok
+lee: can we reschedule the meeting in 2 mins lmk
+brb
+he's asking about coffee at 14:00 sorry!
+sure
+mia: i'll finish lunch in 11 mins asap
+did you see the slides by 5pm np
+morning, he's asking about the demo? np
+morning, i'm running late for the report? please
+morning, they cancelled the invoice? thanks!
+hey, i just pushed the demo? thanks!
+done
+we still need the slides on friday lmk
+don't forget the draft tomorrow asap
+hey, let's grab the tickets? please
+lee: i'll finish lunch in 44 mins :)
+omw, don't forget the meeting after lunch
+hey jo, did you see dinner at 14:00
+don't forget the invoice on friday call me if not
+don't forget the standup in 10 mins see you there
+mia: they cancelled the draft in 39 mins :)
+did you see the release this weekend sounds good
+i booked the review before noon thanks!
+nat: she confirmed the report in 32 mins asap
+max: i'm running late for the demo in 29 mins ok?
+i just pushed the review tonight ok?
+btw, can you send the release? :)
+i'll finish the 3pm call at 14:00 asap
+same
+omw
+we moved the review this weekend makes sense
+got it
+did you see the release tonight my bad
+hi, let's grab the 3pm call? call me if not
+ok so kim, i just pushed the report after lunch
+morning lee, did you see the review at 9:30
+hey, he's asking about the standup? no rush
+update kim, she confirmed the 3pm call tonight
+max: we still need the report in 47 mins np
+wait what
+yep
+hi max, we moved the review at 14:00
+yo, i booked that doc? my bad
+wait what, they cancelled the draft next week
+perfect
+got it, i'm running late for dinner at 14:00
+hey, he's asking about the slides? when you can
+on it
+yep
+hey mia, i'm running late for coffee next week
+can you send the invoice next week thanks!
+ok so, can you send the review? ok?
+i'll finish the standup tonight my bad
+ok so nat, he's asking about the 3pm call tonight
+did you see the standup today np
+we moved lunch before noon please
+wait what
+yep
+yo, let's grab the meeting? thanks!
+sure
+nope
+quick one, can you send the report? when you can
+mia: i just pushed that doc in 2 mins :)
+same
+btw, we moved the report? see you there
+alex: i'll finish the draft in 43 mins see you there
+morning, let's grab the report? makes sense
+he's asking about the meeting on friday see you there
+hey hey alex, did you see the release before noon
+quick one, let's grab the demo? sorry!
+sure, i'll finish that doc at 14:00
+hey hey ray, can we reschedule the 3pm call this weekend
+same
+ray: can you send the meeting in 16 mins call me if not
+update sam, i'm running late for the 3pm call tonight
+agreed, they cancelled the report tonight
+update nat, we still need the 3pm call this weekend
+don't forget dinner at 9:30 no rush
+mia: can we reschedule the invoice in 12 mins sounds good
+mia: he's asking about the 3pm call in 19 mins when you can
+yo nat, let's grab the report at 9:30
+i'll finish the review before noon thanks!
+heads up mia, don't forget the review in 10 mins
+nope, he's asking about the 3pm call tonight
+ok so alex, can we reschedule the standup on friday
+did you see dinner next week ok?
+morning kim, i'm running late for the demo this weekend
+yo, i'll finish lunch? lmk
+i'll finish the report today makes sense
+agreed
+ok, don't forget the review at 14:00
+one sec, she confirmed that doc this weekend
+update max, he's asking about lunch this weekend
+done, they cancelled the 3pm call at 14:00
+she confirmed that doc today ok?
+don't forget lunch in 10 mins lmk
+mia: can you send the report in 43 mins lmk
+alex: he's asking about the report in 7 mins no rush
+jo: don't forget the slides in 41 mins np
+morning kim, don't forget dinner next week
+ok so, did you see the draft? thanks!
+nat: did you see lunch in 48 mins call me if not
+hey pat, i'm running late for the draft tomorrow
+heads up nat, i'll finish the tickets after lunch
+she confirmed the demo this weekend when you can
+hi, i booked the meeting? makes sense
+sam: i'll finish the release in 9 mins call me if not
+we still need the demo at 9:30 np
+lee: i just pushed the draft in 26 mins sounds good
+can we reschedule the tickets next week sounds good
+let's grab the demo tonight lmk
+nat: let's grab coffee in 32 mins when you can
+did you see the meeting tonight please
+ray: did you see lunch in 7 mins sounds good
+hey hey, i just pushed the draft? please
+agreed
+nat: i'm running late for that doc in 36 mins lmk
+quick one kim, he's asking about coffee today
+nat: she confirmed the tickets in 30 mins ok?
+hi mia, we moved the report at 14:00
+btw, i booked coffee? my bad
+i'm running late for coffee by 5pm lmk
+i booked the draft by 5pm np
+yo, i'll finish lunch? sorry!
+we still need the meeting after lunch when you can
+let's grab dinner today sorry!
+yep
+we moved the release today ok?
+sure
+let's grab coffee tonight when you can
+heads up alex, we moved the meeting on friday
+ok so, i'll finish dinner? no rush
+yo, did you see the tickets? no rush
+we moved the 3pm call by 5pm see you there
+btw, she confirmed the draft? sounds good
+she confirmed the draft at 14:00 call me if not
+we moved the 3pm call tonight call me if not
+mia: i'll finish the slides in 3 mins np
+let's grab the report by 5pm :)
+one sec
+jo: can you send the 3pm call in 4 mins please
+i'll finish the 3pm call before noon my bad
+nat: they cancelled the slides in 38 mins no rush
+sure
+jo: can you send the invoice in 41 mins np
+quick one, we moved the invoice? my bad
+can you send coffee before noon no rush
+don't forget the standup today asap
+update, did you see the slides? when you can
+can we reschedule lunch in 10 mins call me if not
+heads up sam, we moved coffee next week
+mia: they cancelled dinner in 15 mins lmk
+btw mia, he's asking about the standup this weekend
+jo: did you see that doc in 40 mins see you there
+really?
+hey hey kim, can we reschedule the standup tonight
+got it, i just pushed lunch after lunch
+hey hey, he's asking about the tickets? please
+hey, i'll finish the review? makes sense
+perfect
+really?
+yo lee, we still need the meeting today
+don't forget the standup in 10 mins makes sense
+yo mia, we moved the 3pm call after lunch
+ray: we moved the demo in 24 mins :)
+i booked the slides this weekend my bad
+ok so, we still need the report? sounds good
+i'm running late for the slides on friday when you can
+he's asking about that doc tomorrow asap
+hi alex, let's grab the meeting at 9:30
+i just pushed the release tonight please
+wait what
+don't forget lunch this weekend :)
+they cancelled the standup before noon asap
+hi, let's grab dinner? see you there
+max: i'm running late for the review in 19 mins sounds good
+mia: let's grab the invoice in 6 mins sorry!
+omw
+hey hey, we moved the meeting? see you there
+one sec
+kim: i'm running late for the meeting in 37 mins sounds good
+kim: let's grab the slides in 10 mins ok?
+on it
+sure
+btw, i'll finish the standup? np
+morning alex, i'll finish lunch in 10 mins
+morning mia, can you send the 3pm call tonight
+ok so, we still need the 3pm call? please
+let's grab lunch by 5pm when you can
+did you see coffee tomorrow asap
+agreed
+i'm running late for dinner at 14:00 asap
+quick one, did you see lunch? see you there
+agreed
+ok
+hi nat, they cancelled coffee tonight
+heads up, she confirmed the report? when you can
+i just pushed the release in 10 mins makes sense
+really?
+we still need the report before noon sounds good
+yo, we moved that doc? see you there
+on it, i booked the standup today
+quick one, i just pushed the demo? sorry!
+agreed
+can we reschedule the report tomorrow makes sense
+i just pushed coffee before noon when you can
+kim: we moved dinner in 30 mins no rush
+agreed, did you see the tickets at 14:00
+don't f
