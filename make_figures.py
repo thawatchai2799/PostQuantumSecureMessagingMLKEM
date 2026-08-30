@@ -102,7 +102,7 @@ def main() -> int:
                    facecolors="none")
     ax.set_yscale("log")
     ax.set_xlabel("bits per character (payload cost)")
-    ax.set_ylabel("encode+decode median latency, us @5,000 chars")
+    ax.set_ylabel("encode+decode median latency, µs @5,000 chars")
     ax.grid(alpha=0.3)
     ax.legend(fontsize=7, ncol=2, loc="lower left")
     ax.set_title("Payload vs computation trade-off", fontsize=10)
