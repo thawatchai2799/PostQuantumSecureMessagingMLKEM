@@ -17,6 +17,9 @@ Tables produced:
   T3   latency at 20,000 chars, every scheme timed in C, with slice ranges
   T3e  latency at 120 and 500 chars, every scheme timed in C
   T3d  S2 decode by decoder implementation: decode/encode and S2/S1 ratios
+  TA   AES-256-GCM per message in C at each scheme's payload size
+  TC   CBOR (map / array / packed) alone and with the encoders, C2 and C5
+  TL   LoRaWAN EU868 time on air implied by the payload sizes (calculation)
   XS   crossover robustness: on how many of the 5 slices each scheme's
        payload is smaller than S2-dom's; XR bits/char ranges over slices
   T6   ML-KEM-512 session costs
@@ -174,6 +177,41 @@ def main() -> int:
                     row.append(f"{min(v):.3f}-{max(v):.3f}")
                 rows.append(row)
         print(md(["Corpus", "Length", "S2-dom", "S3-zstd", "S3d-dom", "S5-hs8", "S6-unishox"], rows))
+
+    aead = load(R / "results_aead.csv")
+    if aead:
+        print("## TA - AES-256-GCM per message, timed in C (us; median over reps), next to the codec cost\n")
+        g = defaultdict(list)
+        for r in aead:
+            g[(r["corpus"], int(r["length"]), r["scheme"], r["op"])].append(int(r["ns"]) / 1e3)
+        bsz = {(r["corpus"], int(r["length"]), r["scheme"]): int(r["payload_bytes"]) for r in aead}
+        rows = []
+        for c in ("c1", "c2"):
+            for n in (120, 500, 20000):
+                for s in ("S4-utf8", "S2-dom-table", "S3d-dom", "S6-unishox"):
+                    if (c, n, s, "encrypt") not in g: continue
+                    rows.append([c.upper(), f"{n:,}", s, f"{bsz[(c, n, s)]:,}",
+                                 f"{st.median(g[(c, n, s, 'encrypt')]):.2f}", f"{st.median(g[(c, n, s, 'decrypt')]):.2f}"])
+        print(md(["Corpus", "Length", "Scheme", "Payload B", "AEAD encrypt", "AEAD decrypt"], rows))
+
+    cb = load(R / "results_cbor.csv")
+    if cb:
+        print("## TC - CBOR serialization alone and with the encoders (mean bytes per record)\n")
+        g = {(r["corpus"], int(r["records_per_msg"]), r["format"], r["encoder"]): float(r["mean_bytes_per_record"]) for r in cb}
+        chars = {(r["corpus"], int(r["records_per_msg"])): float(r["mean_text_chars"]) for r in cb}
+        ks = sorted({(r["corpus"], int(r["records_per_msg"])) for r in cb})
+        hdr = ["Format", "Encoder"] + [f"{c.upper()} k={k} (~{chars[(c, k)]:.0f} chars)" for c, k in ks]
+        rows = []
+        for fmt in ("text", "cbor-map", "cbor-array", "cbor-packed"):
+            for e in ("none", "S2-dom", "S3-zstd", "S3d-dom", "S5-hs8"):
+                rows.append([fmt, e] + [f"{g[(c, k, fmt, e)]:.1f}" for c, k in ks])
+        print(md(hdr, rows))
+
+    air = load(R / "results_airtime.csv")
+    if air:
+        print("## TL - LoRaWAN EU868 time on air implied by the payload sizes (calculation, ms; frames)\n")
+        rows = [[r["corpus"].upper(), r["length"], r["scheme"], f"SF{r['sf']}", r["app_bytes"], r["frames"], r["airtime_ms"]] for r in air]
+        print(md(["Corpus", "Length", "Scheme", "SF", "App. bytes", "Frames", "Airtime (ms)"], rows))
 
     kem = load(R / "results_kem.csv")
     if kem:

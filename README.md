@@ -257,3 +257,20 @@ Added after the initial release (all verified cross-machine):
 - `eval_c4.py` — deterministic bits/char of all five scheme variants on C4
   with per-cell round-trip verification. Output: `data/results_c4.csv`
   (byte-identical across machines; verified).
+
+## Telemetry serialization, AEAD cost and radio time
+
+- `eval_cbor.py` measures CBOR (RFC 8949) as a telemetry baseline on C2 and
+  C5 - as a self-describing map, as a schema array, and packed with integer
+  timestamps and fixed-point values - alone and with the encoders applied on
+  top (artifacts retrained on the CBOR form). Output: `results_cbor.csv`.
+- `bench_aead.c` times AES-256-GCM (OpenSSL EVP, 96-bit nonce, 16-byte tag)
+  in C at the exact encoded size of every scheme and cell, so the AEAD share
+  of the per-message cost is measured, not inferred. Output: `results_aead.csv`.
+  Needs `libssl-dev`.
+- `lora_airtime.py` converts the measured payload sizes into LoRaWAN EU868
+  time on air (Semtech LoRa modem formula, 125 kHz, CR 4/5, SF7 and SF12,
+  13-byte LoRaWAN framing, frames split at the data rate's maximum payload),
+  including the 768-byte ML-KEM-512 ciphertext sent once per session. This is
+  a calculation from payload sizes, not an energy measurement.
+  Output: `results_airtime.csv`.

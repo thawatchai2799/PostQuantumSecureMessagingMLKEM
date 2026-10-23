@@ -1,20 +1,20 @@
 """
-s2_huffman.py — S2: pre-shared canonical Huffman coding.
+s2_huffman.py - S2: pre-shared canonical Huffman coding.
 
 The table is built ONCE from a training corpus (disjoint from all test
-slices) and is assumed pre-shared by both parties — exactly the same
+slices) and is assumed pre-shared by both parties - exactly the same
 assumption the 6-bit static table (S1) enjoys. Nothing is transmitted
 per message. This removes the tree-transmission cost that the original
 paper charged against Huffman coding.
 
-Construction (deterministic — both sides derive an identical table):
+Construction (deterministic - both sides derive an identical table):
   1. Symbol set = all 256 byte values + EOF (symbol 256).
   2. Frequencies = counts in training bytes, add-one smoothing on every
      byte value (so unseen-but-possible bytes still get a code), EOF = 1.
   3. Huffman code lengths via the standard heap algorithm
      (ties broken deterministically by symbol id).
   4. Canonical code assignment: sort by (length, symbol), assign
-     sequentially — the table is then fully described by the 257 code
+     sequentially - the table is then fully described by the 257 code
      lengths alone (what would be pre-shared in a real deployment).
 
 Encode: text -> UTF-8 bytes -> codes + EOF, zero-padded to a byte.
@@ -74,10 +74,14 @@ class HuffmanTable:
         return cls(lengths)
 
     def encode(self, text: str) -> bytes:
+        return self.encode_bytes(text.encode("utf-8"))
+
+    def encode_bytes(self, data: bytes) -> bytes:
+        """Encode arbitrary bytes (used for binary payloads such as CBOR)."""
         acc = 0
         nbits = 0
         out = bytearray()
-        for sym in list(text.encode("utf-8")) + [EOF]:
+        for sym in list(data) + [EOF]:
             code, ln = self.enc[sym]
             acc = (acc << ln) | code
             nbits += ln
@@ -89,6 +93,9 @@ class HuffmanTable:
         return bytes(out)
 
     def decode(self, data: bytes) -> str:
+        return self.decode_bytes(data).decode("utf-8")
+
+    def decode_bytes(self, data: bytes) -> bytes:
         out = bytearray()
         code = 0
         ln = 0
@@ -99,10 +106,10 @@ class HuffmanTable:
                 sym = self.dec.get((ln, code))
                 if sym is not None:
                     if sym == EOF:
-                        return out.decode("utf-8")
+                        return bytes(out)
                     out.append(sym)
                     code = 0
                     ln = 0
                 if ln > self.max_len:
                     raise ValueError("invalid bitstream (no code matched)")
-        raise ValueError("EOF symbol not found — truncated or corrupt stream")
+        raise ValueError("EOF symbol not found - truncated or corrupt stream")

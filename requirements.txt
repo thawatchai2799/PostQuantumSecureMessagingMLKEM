@@ -1,5 +1,6 @@
 zstandard>=0.22
 heatshrink2>=0.13
+cbor2>=5.4
 cryptography>=42.0
 liboqs-python>=0.12
 pandas>=2.0

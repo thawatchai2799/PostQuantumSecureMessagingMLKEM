@@ -261,7 +261,7 @@ def preflight(out: pathlib.Path):
         if not which(tool):
             missing.append(f"tool: {tool}")
     mods = {}
-    for mod in ["oqs", "zstandard", "heatshrink2", "cryptography", "pandas", "matplotlib"]:
+    for mod in ["oqs", "zstandard", "heatshrink2", "cbor2", "cryptography", "pandas", "matplotlib"]:
         try:
             m = __import__(mod)
             mods[mod] = getattr(m, "__version__", "?")
@@ -269,6 +269,7 @@ def preflight(out: pathlib.Path):
             missing.append(f"python module: {mod} ({e.__class__.__name__})")
     for f in ["codec.c", "bench_main.c", "bench_lib.c", "s1_sixbit.py", "s2_huffman.py", "s3_dict.py",
               "s5_heatshrink.py", "s6_unishox.py", "verify_lib.py", "make_slices.py", "make_c5_intel.py",
+              "bench_aead.c", "eval_cbor.py", "lora_airtime.py",
               "third_party/heatshrink/heatshrink_encoder.c", "third_party/unishox2/unishox2.c",
               "harness.py", "gen_s2_tables.py", "make_c1_english.py", "make_c2_iot.py",
               "make_c3_uniform.py", "make_c4_modern.py", "make_s2_train_en.py",
@@ -362,7 +363,12 @@ def build_libs():
         objs.append(obj)
     sh(["gcc", "-O2", "-Wall", "-o", "bench_lib", "bench_lib.c"] + objs + [str(lib)] + inc)
     sh(["gcc", "-O2", "-w", "-shared", "-fPIC", "-o", "libunishox2.so", str(TP / "unishox2" / "unishox2.c")])
-    CON.log(f"library codecs built (libzstd {ZSTD_VER}, heatshrink, Unishox2)")
+    try:
+        sh(["gcc", "-O2", "-Wall", "-o", "bench_aead", "bench_aead.c", "-lcrypto"])
+    except StageError as e:
+        raise StageError(str(e) + "\nThe AES-GCM timing driver needs the OpenSSL headers: "
+                         "sudo apt install libssl-dev") from e
+    CON.log(f"library codecs built (libzstd {ZSTD_VER}, heatshrink, Unishox2) and AES-GCM driver")
 
 
 # --------------------------------------------------------------------------
@@ -568,6 +574,27 @@ def c_latency(out: pathlib.Path, reps: int):
 
 
 # --------------------------------------------------------------------------
+# stage 5b: AES-256-GCM per message, timed in C, at every encoded size
+# --------------------------------------------------------------------------
+def aead(out: pathlib.Path, reps: int):
+    sizes = []
+    with open(out / "results_c_sizes.csv", newline="") as f:
+        for row in csv.DictReader(f):
+            if row["slice"] == "0":
+                sizes.append((row["corpus"], int(row["length"]), row["scheme"], int(row["encoded_bytes"])))
+    cache = {}
+    with open(out / "results_aead.csv", "w", newline="") as f:
+        f.write("corpus,length,scheme,payload_bytes,op,rep,ns\n")
+        for c, n, s, b in sizes:
+            if b not in cache:
+                cache[b] = sh(["./bench_aead", str(b), str(reps)]).strip().splitlines()[1:]
+            for line in cache[b]:
+                op, rep, ns = line.split(",")
+                f.write(f"{c},{n},{s},{b},{op},{rep},{ns}\n")
+    CON.log(f"aead: AES-256-GCM timed at {len(cache)} payload sizes")
+
+
+# --------------------------------------------------------------------------
 # stage 6: footprint
 # --------------------------------------------------------------------------
 def footprint_libs() -> str:
@@ -703,6 +730,9 @@ def summaries(out: pathlib.Path):
         write(out / f"summary_{c}.txt", sh([PY, "eval_c4.py", "--corpus", c]))
         shutil.move(str(ROOT / f"results_{c}.csv"), str(out / f"results_{c}.csv"))
     write(out / "summary_dict_size.txt", sh([PY, "eval_dict_size.py", "--outdir", str(out)]))
+    write(out / "summary_cbor.txt", sh([PY, "eval_cbor.py"]))
+    shutil.move(str(ROOT / "results_cbor.csv"), str(out / "results_cbor.csv"))
+    write(out / "summary_airtime.txt", sh([PY, "lora_airtime.py", "--resdir", str(out)]))
     write(out / "paper_tables.md", sh([PY, "make_tables.py", "--resdir", str(out)]))
 
 
@@ -723,20 +753,21 @@ def integrity(out: pathlib.Path, reps: int):
         return (min(vals), max(vals), len(vals)) if vals else (None, None, 0)
 
     problems = []
-    for name in ["results_kem.csv", "results_pipeline.csv", "results_c_latency.csv"]:
+    for name in ["results_kem.csv", "results_pipeline.csv", "results_c_latency.csv", "results_aead.csv"]:
         lo, hi, n = reps_in(out / name)
         ok = (lo == 0 and hi == reps - 1 and n == reps)
         CON.log(f"  {name}: reps 0..{hi} ({n} distinct) -> {'OK' if ok else 'STALE/INCOMPLETE'}")
         if not ok:
             problems.append(name)
     for name in ["results_c4.csv", "results_c5.csv", "results_c_sizes.csv", "verify_lib.txt",
+                 "results_aead.csv", "results_cbor.csv", "results_airtime.csv",
                  "results_dict_size.csv", "paper_tables.md",
                  "footprint.txt", "environment.txt", "verify_c.txt", "verify_python.txt",
                  "summary_pipeline.txt", "callgrind.txt", "figures/fig_rq1_bpc.png",
                  "figures/fig_rq2_decoder.png", "figures/fig_rq3_tradeoff.png"]:
         if not (out / name).exists():
             problems.append(name + " (missing)")
-    for name in ["results_c4.csv", "results_c5.csv", "results_dict_size.csv"]:
+    for name in ["results_c4.csv", "results_c5.csv", "results_dict_size.csv", "results_cbor.csv"]:
         with open(out / name, newline="") as f:
             bad = [r for r in csv.DictReader(f) if r.get("roundtrip", "ok") != "ok"]
         if bad:
@@ -791,7 +822,8 @@ def register_tasks(reps: int, warmup: int):
                     PROG.add(f"c-latency {c} {n} s{k} {name}", 0.01 + cost)
     PROG.add("callgrind", 40)
     PROG.add("footprint", 1)
-    PROG.add("summaries", 8)
+    PROG.add("aead", 6)
+    PROG.add("summaries", 45)
     PROG.add("figures", 4)
     PROG.add("integrity", 0.5)
     PROG.add("package", 2)
@@ -826,6 +858,7 @@ def main() -> int:
         run_task("kem", kem_costs, out, args.reps, args.warmup)
         pipeline(out, args.reps, args.warmup)          # per-task progress inside
         c_latency(out, args.reps)                      # per-task progress inside
+        run_task("aead", aead, out, args.reps)
         run_task("footprint", footprint, out)
         run_task("callgrind", callgrind, out)
         run_task("summaries", lambda o: (c_latency_summary(o), summaries(o)), out)
