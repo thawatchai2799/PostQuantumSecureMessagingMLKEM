@@ -15,7 +15,7 @@ the first TRAIN_CHARS characters become the pre-shared training text
 (corpus/c4/c4_{500,1000,5000,20000}.txt) — same-domain but disjoint,
 exactly the pre-shared-table deployment model of Section IV-B.
 
-Output: s2_train_c4.txt, corpus_c4/c4_{500,1000,5000,20000}.txt
+Output: s2_train_c4.txt, corpus_c4/c4_{120,500,1000,2000,3000,5000,20000}.txt
 (kept OUTSIDE corpus/ on purpose: harness.py auto-iterates every corpus/*
 subdirectory and has no c4 scheme mapping, so placing c4 there would crash
 future harness runs)
@@ -25,7 +25,7 @@ import argparse
 import pathlib
 import random
 
-LENGTHS = [500, 1000, 5000, 20000]
+LENGTHS = [120, 500, 1000, 2000, 3000, 5000, 20000]
 SEED = 20260830          # fixed; report in paper
 TRAIN_CHARS = 30000
 

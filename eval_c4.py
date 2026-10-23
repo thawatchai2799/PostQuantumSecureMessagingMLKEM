@@ -10,6 +10,8 @@ construction mirrors harness.py exactly:
   S2-dom  : canonical Huffman trained on s2_train_c4.txt (pre-shared,
             held-out same-domain split)
   S3-zstd : zstandard level 3, no dictionary
+  S3d-dom : zstd + pre-shared dictionary trained on s2_train_c4.txt
+  S3d-en  : zstd + the English dictionary (cross-domain)
   S4-utf8 : UTF-8 passthrough
 Round-trip verified per cell (exact for S2*/S3/S4; canonicalized for S1).
 
@@ -24,6 +26,7 @@ import zstandard
 
 try:
     import s1_sixbit
+    import s3_dict
     from s2_huffman import HuffmanTable
 except ImportError:
     raise SystemExit(
@@ -31,7 +34,7 @@ except ImportError:
         "Run this from the experiment directory that contains harness.py\n"
         "(e.g. ~/mlkem-encoding-paper/run2), not from Downloads.")
 
-LENGTHS = [500, 1000, 5000, 20000]
+LENGTHS = [120, 500, 1000, 2000, 3000, 5000, 20000]
 
 
 def main() -> int:
@@ -46,6 +49,7 @@ def main() -> int:
     c4 = HuffmanTable.train(pathlib.Path("s2_train_c4.txt").read_bytes())
     zc = zstandard.ZstdCompressor(level=3)
     zd = zstandard.ZstdDecompressor()
+    d3 = s3_dict.codecs_for("c4", s3_dict.build_dicts())
 
     schemes = {
         "S1-6bit": (lambda t: s1_sixbit.encode(t, mode="drop"),
@@ -56,6 +60,8 @@ def main() -> int:
         "S3-zstd": (lambda t: zc.compress(t.encode("utf-8")),
                     lambda b: zd.decompress(b).decode("utf-8"),
                     lambda t: t),
+        "S3d-dom": (d3["S3d-dom"].encode, d3["S3d-dom"].decode, lambda t: t),
+        "S3d-en":  (d3["S3d-en"].encode, d3["S3d-en"].decode, lambda t: t),
         "S4-utf8": (lambda t: t.encode("utf-8"),
                     lambda b: b.decode("utf-8"),
                     lambda t: t),

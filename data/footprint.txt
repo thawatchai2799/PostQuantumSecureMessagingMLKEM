@@ -1,0 +1,7 @@
+== x86 -Os codec-only ==
+   text	   data	    bss	    dec	    hex	filename
+   2052	      0	   6496	   8548	   2164	codec_os.o
+
+== ARM Cortex-M4 -Os codec-only ==
+   text	   data	    bss	    dec	    hex	filename
+   1662	      0	   6472	   8134	   1fc6	codec_arm.o

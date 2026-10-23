@@ -15,6 +15,12 @@ the raw measurement data reported in the paper.
 ## Repository layout
 
 ```
+s3_dict.py               S3d: zstd with a PRE-SHARED pre-trained dictionary
+                         (fair counterpart of S2's pre-shared table)
+make_s2_train_en.py      Builds s2_train.txt (English pre-shared training
+                         text) from Gutenberg #161 — disjoint from C1 (#1342)
+eval_dict_size.py        S3d sensitivity to dictionary size (payload only)
+make_tables.py           Prints the paper's tables (Markdown) from a results dir
 codec.c / codec.h        C implementations of S1 (6-bit) and S2 (Huffman);
                          static allocation only, embedded-friendly
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
@@ -108,6 +114,32 @@ gcc -Os -c codec.c -o codec_os.o && size codec_os.o
 arm-none-eabi-gcc -Os -mcpu=cortex-m4 -c codec.c -o codec_arm.o \
   && arm-none-eabi-size codec_arm.o
 ```
+
+## S3d: pre-shared zstd dictionaries (fairness extension)
+
+S2 is granted a pre-shared Huffman table; to keep the comparison
+symmetric, S3d grants zstd the equivalent pre-shared state: a dictionary
+trained (zstd COVER trainer, level 3) on the *same* seed-disjoint
+training corpora, capped at 2,048 B (S2's expanded decode table is ~2 KB).
+The dictionary ID is not written into frames (`write_dict_id=False`), so
+nothing is transmitted per message. Two configurations mirror S2:
+`S3d-dom` (domain-matched dictionary) and `S3d-en` (English dictionary
+applied to every corpus). Dictionary bytes, IDs and SHA-256 are written
+to `s3_dicts/` and copied into every results directory.
+`eval_dict_size.py` sweeps the cap over 256–4,096 B.
+
+Message lengths now include 120 (≈ one C2 telemetry record), 2,000 and
+3,000 characters, so the S2/zstd crossover is located rather than
+bracketed. All earlier slices are byte-identical prefixes of the same
+streams (same seeds/offsets), so previously reported numbers reproduce
+unchanged.
+
+The English pre-shared training text is built by `make_s2_train_en.py`
+from Gutenberg #161 (*Sense and Sensibility*): same author and register
+as C1 but a different book, so no passage of the test corpus can leak
+into the pre-shared state. (Earlier releases shipped a 452-character
+paragraph repeated 60 times as `s2_train.txt`; adequate only as a crude
+byte-frequency proxy.)
 
 ## Notes on methodology
 

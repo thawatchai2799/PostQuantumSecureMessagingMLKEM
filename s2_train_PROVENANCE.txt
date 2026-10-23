@@ -1,0 +1,7 @@
+file: s2_train.txt
+source: https://www.gutenberg.org/cache/epub/161/pg161.txt
+book_id: 161
+offset: 5000
+chars: 30000
+cleaning: strip PG markers, collapse whitespace (make_c1_english.clean_gutenberg)
+sha256: 71b416206d2a798d3e7a51e0d77283754d1eeeb0196db126e622e8cb271c2271

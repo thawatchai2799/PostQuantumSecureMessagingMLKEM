@@ -3,3 +3,12 @@ s1 corpus/c1/c1_20000.txt: ==4587== I   refs:      832,341
 s2en corpus/c1/c1_20000.txt: ==4589== I   refs:      686,187
 s2c2 corpus/c2/c2_20000.txt: ==4591== I   refs:      689,356
 s2c3 corpus/c3/c3_20000.txt: ==4593== I   refs:      731,533
+
+# Re-measurement after the English training text was replaced (s2_train.txt
+# from Gutenberg #161). Same compiler (gcc 13.3.0, Ubuntu 24.04), -O2,
+# valgrind --tool=callgrind, encode path, baseline = empty-input invocation.
+# Only the English table changed; the C2/C3 tables are unchanged.
+# Control: with the previous tables the same procedure reproduces the
+# values above (S1 29.99, S2-en 22.69 instructions/char).
+s1   empty                  I refs: 362,461   (baseline, this host, new tables)
+s2en corpus/c1/c1_20000.txt I refs: 811,151   -> (811,151 - 362,461) / 20,000 = 22.43 instructions/char

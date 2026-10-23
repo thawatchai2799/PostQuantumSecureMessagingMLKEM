@@ -32,6 +32,7 @@ import zstandard
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import s1_sixbit
+import s3_dict
 from s2_huffman import HuffmanTable
 
 # ---------------- HKDF-SHA256 (extract+expand, RFC 5869) ----------------
@@ -57,6 +58,7 @@ def build_schemes():
     }
     zc = zstandard.ZstdCompressor(level=3)
     zd = zstandard.ZstdDecompressor()
+    dicts = s3_dict.build_dicts()          # S3d: pre-shared zstd dictionaries
 
     def s3e(t): return zc.compress(t.encode("utf-8"))
     def s3d(b): return zd.decompress(b).decode("utf-8")
@@ -66,6 +68,7 @@ def build_schemes():
     s1_mode = {"c1": "drop", "c2": "strict", "c3": "strict"}
 
     def make(corpus):
+        d3 = s3_dict.codecs_for(corpus, dicts)
         return {
             "S1-6bit": (lambda t: s1_sixbit.encode(t, mode=s1_mode[corpus]),
                         s1_sixbit.decode,
@@ -73,6 +76,8 @@ def build_schemes():
             "S2-en":  (en.encode, en.decode, lambda t: t),
             "S2-dom": (dom[corpus].encode, dom[corpus].decode, lambda t: t),
             "S3-zstd": (s3e, s3d, lambda t: t),
+            "S3d-dom": (d3["S3d-dom"].encode, d3["S3d-dom"].decode, lambda t: t),
+            "S3d-en":  (d3["S3d-en"].encode, d3["S3d-en"].decode, lambda t: t),
             "S4-utf8": (s4e, s4d, lambda t: t),
         }
     return make

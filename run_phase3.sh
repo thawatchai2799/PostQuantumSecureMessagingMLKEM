@@ -20,14 +20,27 @@ mkdir -p "$OUT"
 log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$OUT/run.log"; }
 
 log "=== Stage 0: build (REPS=$REPS) ==="
+# English pre-shared training text (Gutenberg #161, disjoint from C1 = #1342).
+# Set EN_TRAIN_INPUT=/path/to/pg161.txt to use a local copy (no network).
+if [ ! -f s2_train_PROVENANCE.txt ]; then
+    python3 make_s2_train_en.py ${EN_TRAIN_INPUT:+--input "$EN_TRAIN_INPUT"} | tee -a "$OUT/run.log"
+fi
+cp s2_train*.txt "$OUT/"
 python3 gen_s2_tables.py | tee -a "$OUT/run.log"
 gcc -O2 -Wall -o bench codec.c bench_main.c
 gcc -Os -c codec.c -o codec_os.o
 
 log "=== Stage 1: corpus ==="
-[ -d corpus/c1 ] || python3 make_c1_english.py   # needs network or --input
+# Regenerate C1 if any slice (incl. the newer 120/2000/3000 lengths) is missing.
+# Set C1_INPUT=/path/to/pg1342.txt to use a local Gutenberg copy (no network).
+if [ ! -f corpus/c1/c1_120.txt ] || [ ! -f corpus/c1/c1_3000.txt ]; then
+    python3 make_c1_english.py ${C1_INPUT:+--input "$C1_INPUT"}
+fi
 python3 make_c2_iot.py    >/dev/null
 python3 make_c3_uniform.py >/dev/null
+python3 make_c4_modern.py  >/dev/null
+python3 s3_dict.py | tee -a "$OUT/run.log"      # pre-shared zstd dictionaries
+cp -r s3_dicts "$OUT/s3_dicts"
 cp -r corpus "$OUT/corpus-snapshot"
 
 log "=== Stage 2: verify (abort on any failure) ==="
@@ -89,6 +102,9 @@ for k in sorted(g):
 PYEOF
 ) | tee "$OUT/summary_c_latency.txt"
 python3 analyze.py --resdir "$OUT" > "$OUT/summary_pipeline.txt"
+python3 eval_c4.py > "$OUT/summary_c4.txt" && mv results_c4.csv "$OUT/"
+python3 eval_dict_size.py --outdir "$OUT" | tee "$OUT/summary_dict_size.txt"
+python3 make_tables.py --resdir "$OUT" > "$OUT/paper_tables.md"
 
 log "=== Stage 7: output integrity verification ==="
 python3 - "$OUT" "$REPS" <<'PYEOF'

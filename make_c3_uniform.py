@@ -9,7 +9,7 @@ to C1, preserving the useful design of the original paper's Table 5.
 
 Fully seeded for reproducibility.
 
-Output: corpus/c3/c3_{500,1000,5000,20000}.txt
+Output: corpus/c3/c3_{120,500,1000,2000,3000,5000,20000}.txt
 """
 
 import argparse
@@ -18,7 +18,7 @@ import random
 
 from alphabet54 import ALPHABET54
 
-LENGTHS = [500, 1000, 5000, 20000]
+LENGTHS = [120, 500, 1000, 2000, 3000, 5000, 20000]
 SEED = 54540229  # fixed; report in paper
 
 

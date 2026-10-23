@@ -12,7 +12,8 @@ Schema per record (typical smart-building node):
 Records are concatenated NDJSON-style (one per line) and the stream is
 cut to exactly N characters, mirroring how a gateway batches telemetry.
 
-Output: corpus/c2/c2_{500,1000,5000,20000}.txt
+Output: corpus/c2/c2_{120,500,1000,2000,3000,5000,20000}.txt
+(120 chars ≈ one telemetry record: the single-record regime)
 """
 
 import argparse
@@ -21,7 +22,7 @@ import json
 import pathlib
 import random
 
-LENGTHS = [500, 1000, 5000, 20000]
+LENGTHS = [120, 500, 1000, 2000, 3000, 5000, 20000]
 SEED = 20260829  # fixed; report in paper
 BASE_TS = dt.datetime(2026, 8, 29, 8, 0, 0)
 

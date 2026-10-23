@@ -1,0 +1,7 @@
+zstandard 0.25.0 / libzstd 1.5.7
+dict_size=2048 level=3 chunk=128 write_dict_id=False
+
+en: train=s2_train.txt rule=chunks bytes=2048 dict_id=898303119 sha256=21db47a1daf4f9fe471828359a323302384c5569868385a6b2b9e03ac03b95f2
+c2: train=s2_train_c2.txt rule=lines bytes=2048 dict_id=91759415 sha256=3eec99edd1a8a089a539cfff4a175c60adb9fa373c108efc4017efcd43553b05
+c3: train=s2_train_c3.txt rule=chunks bytes=2048 dict_id=1080799814 sha256=1948ea5764147ce0595754bbc53691ec880476f03ff30edc3865b9eda69dd25c
+c4: train=s2_train_c4.txt rule=lines bytes=2048 dict_id=1959857438 sha256=6bd1918b1ce536455c0d85551f497448bcfda98ad0ddf43e88227bf2511b2d2a

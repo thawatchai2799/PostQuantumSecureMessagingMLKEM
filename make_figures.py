@@ -45,10 +45,11 @@ def main() -> int:
     # ---- Figure 1: bits/char vs length ----
     styles = {"S1-6bit": ("o-", "#1f77b4"), "S2-dom": ("s-", "#d62728"),
               "S2-en": ("s--", "#ff9896"), "S3-zstd": ("^-", "#2ca02c"),
+              "S3d-dom": ("v-", "#17becf"), "S3d-en": ("v--", "#9edae5"),
               "S4-utf8": ("x-", "#7f7f7f")}
     titles = {"c1": "C1: English text", "c2": "C2: IoT JSON",
               "c3": "C3: uniform 54-char"}
-    fig, axes = plt.subplots(1, 3, figsize=(11, 3.4), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(11, 3.9), sharey=True)
     for ax, c in zip(axes, ["c1", "c2", "c3"]):
         dd = bpc[bpc.corpus == c]
         for s, (st, col) in styles.items():
@@ -63,15 +64,17 @@ def main() -> int:
     axes[0].set_ylabel("bits per character")
     axes[0].annotate(f"log2(54)={ENTROPY_54}", xy=(3200, ENTROPY_54 - 0.12),
                      fontsize=7, va="top")
-    axes[2].legend(fontsize=7, loc="lower right")
-    plt.tight_layout()
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=7, ncol=7, loc="lower center",
+               bbox_to_anchor=(0.5, 0.0), frameon=False)
+    plt.tight_layout(rect=(0, 0.07, 1, 1))
     plt.savefig(o / "fig_rq1_bpc.png", dpi=200)
     plt.savefig(o / "fig_rq1_bpc.pdf")
 
     # ---- Figure 2: trade-off scatter at 5,000 chars ----
     fig, ax = plt.subplots(figsize=(5.6, 4.2))
     cols = {"S1-6bit": "#1f77b4", "S2-dom": "#d62728",
-            "S3-zstd": "#2ca02c", "S4-utf8": "#7f7f7f"}
+            "S3-zstd": "#2ca02c", "S3d-dom": "#17becf", "S4-utf8": "#7f7f7f"}
     marks = {"c1": "o", "c2": "s", "c3": "^"}
     cmap = {("c1", "s1"): "S1-6bit", ("c3", "s1"): "S1-6bit",
             ("c1", "s2en"): "S2-dom", ("c2", "s2c2"): "S2-dom",
@@ -87,7 +90,7 @@ def main() -> int:
         if len(e) and len(b):
             pts.append((c, paper, b[0], e[0] + dec[0]))
     for c in ["c1", "c2", "c3"]:
-        for paper in ["S3-zstd", "S4-utf8"]:
+        for paper in ["S3-zstd", "S3d-dom", "S4-utf8"]:
             b = bpc[(bpc.corpus == c) & (bpc.length == 5000) &
                     (bpc.scheme == paper)]["bpc"].values
             g = ok[(ok.corpus == c) & (ok.length == 5000) & (ok.scheme == paper)]

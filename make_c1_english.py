@@ -10,7 +10,7 @@ Usage:
     python3 make_c1_english.py                # downloads from gutenberg.org
     python3 make_c1_english.py --input pg1342.txt   # use a local copy
 
-Output: corpus/c1/c1_{500,1000,5000,20000}.txt
+Output: corpus/c1/c1_{120,500,1000,2000,3000,5000,20000}.txt
 Each file is exactly N characters, sliced from cleaned text starting at
 a fixed offset (default 5000) to skip front matter like tables of contents.
 """
@@ -23,7 +23,7 @@ import urllib.request
 
 BOOK_ID = 1342
 URL = f"https://www.gutenberg.org/cache/epub/{BOOK_ID}/pg{BOOK_ID}.txt"
-LENGTHS = [500, 1000, 5000, 20000]
+LENGTHS = [120, 500, 1000, 2000, 3000, 5000, 20000]
 START_OFFSET = 5000  # chars into cleaned text; fixed for reproducibility
 
 START_RE = re.compile(r"\*\*\* ?START OF (?:THE|THIS) PROJECT GUTENBERG.*?\*\*\*", re.S)
