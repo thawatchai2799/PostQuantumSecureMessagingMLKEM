@@ -1,8 +1,8 @@
 """
-make_c1_english.py — Build corpus C1 (English text) from Project Gutenberg.
+make_c1_english.py - Build corpus C1 (English text) from Project Gutenberg.
 
 Reproducibility: the paper reports the Gutenberg book ID, the strip
-markers, and the slice offsets — anyone can rebuild byte-identical files.
+markers, and the slice offsets - anyone can rebuild byte-identical files.
 
 Default book: #1342 Pride and Prejudice (public domain, plain-text UTF-8).
 
@@ -55,8 +55,11 @@ def main() -> int:
     else:
         print(f"Downloading Gutenberg #{BOOK_ID} ...")
         with urllib.request.urlopen(URL, timeout=60) as r:
-            raw = r.read().decode("utf-8", errors="replace")
+            data = r.read()
+        raw = data.decode("utf-8", errors="replace")
         source = URL
+        # keep the downloaded book: make_slices.py cuts further slices from it
+        pathlib.Path(f"pg{BOOK_ID}.txt").write_bytes(data)
 
     text = clean_gutenberg(raw)
     need = args.offset + max(LENGTHS)

@@ -27,6 +27,17 @@ codec.c / codec.h        C implementations of S1 (6-bit) and S2 (Huffman);
                          table-driven (9-bit lookup, production style)
 s5_heatshrink.py         S5: heatshrink LZSS (MCU-class compressor, stateless),
                          two window sizes (256 B, 2 KiB)
+s6_unishox.py            S6: Unishox2 short-string coder (stateless), via ctypes
+bench_lib.c              C timing driver for the library codecs (zstd, zstd +
+                         dictionary, heatshrink, Unishox2, UTF-8); same clock
+                         and output format as bench_main.c
+verify_lib.py            Byte-exact check: bench_lib output == Python encoders
+make_slices.py           5 disjoint input slices per corpus and length (timing)
+make_c5_intel.py         Corpus C5: real sensor readings (Intel Berkeley Lab
+                         data set, data.txt.gz must be downloaded)
+third_party/             Vendored heatshrink 0.4.1 and Unishox2 1.0.4 (unmodified;
+                         see third_party/README.md); zstd 1.5.7 is downloaded and
+                         checked against a pinned SHA-256 by run_all.py
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
 s2_tables.h              Auto-generated canonical Huffman tables (do not edit)
 gen_s2_tables.py         Regenerates s2_tables.h from the training corpora
@@ -122,6 +133,26 @@ gcc -Os -c codec.c -o codec_os.o && size codec_os.o
 arm-none-eabi-gcc -Os -mcpu=cortex-m4 -c codec.c -o codec_arm.o \
   && arm-none-eabi-size codec_arm.o
 ```
+
+## Timing: every scheme in C, five input slices per cell
+
+`run_all.py` times every scheme from C with `clock_gettime(CLOCK_MONOTONIC)`:
+S1 and S2 through `bench`, the library codecs through `bench_lib`. Contexts,
+dictionaries and coder state are created once outside the timed region. Each
+(corpus, length) cell is timed on 5 disjoint input slices (`make_slices.py`),
+100 repetitions each; a cell's value is the median over slices of the
+per-slice medians, with the min-max over slices as its range.
+`results_c_sizes.csv` records the encoded size of every slice, so payload
+crossovers can be checked on all five inputs. The Python pipeline is still
+run for the end-to-end KEM-DEM verification and the payload tables.
+
+## C5: real sensor readings
+
+C5 uses the Intel Berkeley Research Lab data set (54 motes, 2004). Download
+`data.txt.gz` (34 MB) from https://db.csail.mit.edu/labdata/data.txt.gz and
+place it next to `run_all.py`; `make_c5_intel.py` keeps each reading as the
+text line the data set distributes, takes the test stream from the start of
+the file and the training text from reading 1,000,000 on.
 
 ## S2 decoders
 

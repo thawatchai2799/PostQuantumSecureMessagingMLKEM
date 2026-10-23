@@ -1,4 +1,4 @@
-/* bench_main.c — benchmark/verification driver for codec.c.
+/* bench_main.c - benchmark/verification driver for codec.c.
  * Buffers here are measurement scaffolding, NOT part of the codec
  * footprint; report codec.o sizes for the paper, not this file's. */
 #include <stdio.h>
@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
         if (m < 0) return 1;
         for (int r = 0; r < 5; r++) { ENC(); DEC(m); }
         printf("op,rep,ns\n");
+        printf("size,-1,%ld\n", m);
         for (int r = 0; r < reps; r++) {
             uint64_t a = now_ns();
             volatile long e = ENC();

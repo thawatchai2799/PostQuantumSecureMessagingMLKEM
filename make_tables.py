@@ -2,17 +2,23 @@
 make_tables.py - Print the paper's tables (Markdown) from a results dir.
 
 Usage:  python3 make_tables.py --resdir results_phase3/<timestamp>
-Reads:  results_pipeline.csv, results_c_latency.csv, results_kem.csv,
-        results_c4.csv (optional), results_dict_size.csv (optional)
+Reads:  results_pipeline.csv, results_c_latency.csv, results_c_sizes.csv,
+        results_kem.csv, results_c4.csv / results_c5.csv / results_dict_size.csv
+        (optional)
+
+results_c_latency.csv holds every scheme timed from C (bench / bench_lib)
+on 5 independent input slices per (corpus, length); results_c_sizes.csv the
+encoded size of every slice. A cell's latency is the median over slices of
+the per-slice median over repetitions; ranges are min-max over slices.
 
 Tables produced:
   T2   bits/char, every scheme x corpus x length (deterministic)
-  T2b  same for C4 (if results_c4.csv present)
-  T3   C-codec latency at 20,000 chars (mean+/-SD, median) for S1 / S2-dom
-       (S2-dom decode with the bit-serial and the table-driven decoder)
-  T3d  decode-asymmetry report: S2 decode/encode and S2/S1 decode ratios per
-       corpus and length, for both decoders
-  T3b  Python-side latency for S3 / S3d-dom / S4 at 20,000 chars (median)
+  T2b  same for C4 (chat register); T2c same for C5 (real sensor readings)
+  T3   latency at 20,000 chars, every scheme timed in C, with slice ranges
+  T3e  latency at 120 and 500 chars, every scheme timed in C
+  T3d  S2 decode by decoder implementation: decode/encode and S2/S1 ratios
+  XS   crossover robustness: on how many of the 5 slices each scheme's
+       payload is smaller than S2-dom's; XR bits/char ranges over slices
   T6   ML-KEM-512 session costs
   T8   wire bytes per single-message session on C1 (@500 and @20,000)
   TD   dictionary-size sensitivity (if results_dict_size.csv present)
@@ -26,7 +32,8 @@ import pathlib
 import statistics as st
 from collections import defaultdict
 
-SCHEMES = ["S1-6bit", "S2-dom", "S2-en", "S3-zstd", "S3d-dom", "S3d-en", "S4-utf8", "S5-hs8", "S5-hs11"]
+SCHEMES = ["S1-6bit", "S2-dom", "S2-en", "S3-zstd", "S3d-dom", "S3d-en", "S4-utf8", "S5-hs8", "S5-hs11", "S6-unishox"]
+C_TIMED = ["S1-6bit", "S2-dom-bit", "S2-dom-table", "S3-zstd", "S3d-dom", "S4-utf8", "S5-hs8", "S5-hs11", "S6-unishox"]
 OVERHEAD = 768 + 12 + 16   # ML-KEM-512 ct + nonce + tag
 
 
@@ -71,69 +78,102 @@ def main() -> int:
             for c in corpora for n in lengths if any((c, n, s) in bpc for s in SCHEMES)]
     print(md(["Corpus", "Length"] + SCHEMES, rows))
 
-    c4 = load(R / "results_c4.csv")
-    if c4:
-        print("## T2b - C4 bits per character\n")
-        g = {(int(r["length"]), r["scheme"]): float(r["bpc"]) for r in c4}
+    for cx, title in (("c4", "C4 (chat register)"), ("c5", "C5 (real sensor readings, Intel Lab)")):
+        ex = load(R / f"results_{cx}.csv")
+        if not ex:
+            continue
+        print(f"## T2{'b' if cx == 'c4' else 'c'} - {title} bits per character\n")
+        g = {(int(r["length"]), r["scheme"]): float(r["bpc"]) for r in ex}
         ls = sorted({k[0] for k in g})
-        rows = [["C4", f"{n:,}"] + [f"{g[(n, s)]:.3f}" if (n, s) in g else "-" for s in SCHEMES] for n in ls]
+        rows = [[cx.upper(), f"{n:,}"] + [f"{g[(n, s)]:.3f}" if (n, s) in g else "-" for s in SCHEMES] for n in ls]
         print(md(["Corpus", "Length"] + SCHEMES, rows))
-        drops = {int(r["length"]): int(r["s1_dropped"]) for r in c4 if r["scheme"] == "S1-6bit"}
-        print("S1 drop rate on C4: " + ", ".join(f"{n:,}: {100*d/n:.2f}%" for n, d in sorted(drops.items())) + "\n")
+        drops = {int(r["length"]): int(r["s1_dropped"]) for r in ex if r["scheme"] == "S1-6bit"}
+        print(f"S1 drop rate on {cx.upper()}: " + ", ".join(f"{n:,}: {100*d/n:.2f}%" for n, d in sorted(drops.items())) + "\n")
+        for s in ("S3-zstd", "S3d-dom", "S5-hs8", "S5-hs11", "S6-unishox"):
+            wins = [n for n in ls if g[(n, s)] < g[(n, "S2-dom")]]
+            print(f"- {cx.upper()} {s} beats S2-dom at: {', '.join(f'{n:,}' for n in wins) or 'no tested length'}")
+        print()
 
     lat = load(R / "results_c_latency.csv")
     if lat:
-        print("## T3 - C-codec latency at 20,000 chars, us (n = reps)\n")
-        g = defaultdict(list)
+        per = defaultdict(list)
         for r in lat:
-            if int(r["length"]) == 20000:
-                g[(r["corpus"], r["scheme"], r["op"])].append(int(r["ns"]) / 1e3)
-        name = {"s1": "S1-6bit", "s2en": "S2-dom (bit-serial dec.)", "s2c2": "S2-dom (bit-serial dec.)",
-                "s2c3": "S2-dom (bit-serial dec.)", "s2en-lut": "S2-dom (table-driven dec.)",
-                "s2c2-lut": "S2-dom (table-driven dec.)", "s2c3-lut": "S2-dom (table-driven dec.)"}
-        rows = []
-        for c in corpora:
-            for sch in ["s1", "s2en", "s2c2", "s2c3", "s2en-lut", "s2c2-lut", "s2c3-lut"]:
-                e, d = g.get((c, sch, "encode")), g.get((c, sch, "decode"))
-                if not e: continue
-                rows.append([c.upper(), name[sch],
-                             f"{st.mean(e):.1f} +/- {st.stdev(e):.1f}", f"{st.median(e):.1f}",
-                             f"{st.mean(d):.1f} +/- {st.stdev(d):.1f}", f"{st.median(d):.1f}"])
-        print(md(["Corpus", "Scheme", "Encode mean +/- SD", "Encode median", "Decode mean +/- SD", "Decode median"], rows))
-        for suffix, lab in [("", "bit-serial"), ("-lut", "table-driven")]:
-            ratios = []
-            for c in corpora:
-                s1 = g.get((c, "s1", "decode"))
-                s2 = next((g[(c, k + suffix, "decode")] for k in ["s2en", "s2c2", "s2c3"] if (c, k + suffix, "decode") in g), None)
-                if s1 and s2: ratios.append(f"{c.upper()}: {st.median(s2)/st.median(s1):.1f}x")
-            print(f"Decode median ratio S2/S1 ({lab} decoder): " + ", ".join(ratios) + "\n")
+            per[(r["corpus"], int(r["length"]), r["scheme"], r["op"], int(r["slice"]))].append(int(r["ns"]) / 1e3)
+        cellv = defaultdict(list)
+        for (c, n, s, op, k), v in per.items():
+            cellv[(c, n, s, op)].append(st.median(v))
+        nslices = max(int(r["slice"]) for r in lat) + 1
+        nreps = max(int(r["rep"]) for r in lat) + 1
 
-        print("## T3d - S2 decode asymmetry per length (median us; ratios)\n")
-        gl = defaultdict(list)
-        for r in lat:
-            gl[(r["corpus"], int(r["length"]), r["scheme"], r["op"])].append(int(r["ns"]) / 1e3)
+        def med(c, n, s, op):
+            v = cellv.get((c, n, s, op)); return st.median(v) if v else None
+
+        def rng(c, n, s, op):
+            v = cellv[(c, n, s, op)]; return min(v), max(v)
+
+        print(f"## T3 - latency at 20,000 chars, all schemes timed in C (us; median over {nslices} slices "
+              f"of per-slice medians over {nreps} reps; [min-max over slices])\n")
         rows = []
         for c in corpora:
-            s2 = {"c1": "s2en", "c2": "s2c2", "c3": "s2c3"}[c]
+            for s in C_TIMED:
+                e = med(c, 20000, s, "encode")
+                if e is None: continue
+                d = med(c, 20000, s, "decode")
+                (e0, e1), (d0, d1) = rng(c, 20000, s, "encode"), rng(c, 20000, s, "decode")
+                rows.append([c.upper(), s, f"{e:.1f} [{e0:.1f}-{e1:.1f}]", f"{d:.1f} [{d0:.1f}-{d1:.1f}]"])
+        print(md(["Corpus", "Scheme", "Encode", "Decode"], rows))
+
+        print("## T3e - latency at 120 and 500 chars (us; median over slices)\n")
+        rows = []
+        for c in corpora:
+            for s in C_TIMED:
+                if med(c, 120, s, "encode") is None: continue
+                rows.append([c.upper(), s] + [f"{med(c, n, s, op):.2f}" for n in (120, 500) for op in ("encode", "decode")])
+        print(md(["Corpus", "Scheme", "Enc @120", "Dec @120", "Enc @500", "Dec @500"], rows))
+
+        print("## T3d - S2 decode by decoder implementation (us; median over slices; ratios)\n")
+        rows = []
+        for c in corpora:
             for n in lengths:
-                e = gl.get((c, n, s2, "encode")); db = gl.get((c, n, s2, "decode")); dl = gl.get((c, n, s2 + "-lut", "decode"))
-                d1 = gl.get((c, n, "s1", "decode"))
-                if not (e and db and dl): continue
-                me, mb, ml = st.median(e), st.median(db), st.median(dl)
-                rows.append([c.upper(), f"{n:,}", f"{me:.2f}", f"{mb:.2f}", f"{ml:.2f}",
-                             f"{mb/me:.1f}x", f"{ml/me:.1f}x", f"{mb/ml:.1f}x",
-                             f"{mb/st.median(d1):.1f}x" if d1 else "-", f"{ml/st.median(d1):.1f}x" if d1 else "-"])
-        print(md(["Corpus", "Length", "S2 encode", "S2 decode (bit)", "S2 decode (table)",
-                  "dec/enc (bit)", "dec/enc (table)", "bit/table", "S2/S1 dec (bit)", "S2/S1 dec (table)"], rows))
+                e = med(c, n, "S2-dom-table", "encode"); db = med(c, n, "S2-dom-bit", "decode"); dl = med(c, n, "S2-dom-table", "decode")
+                d1 = med(c, n, "S1-6bit", "decode")
+                if e is None or db is None or dl is None: continue
+                rows.append([c.upper(), f"{n:,}", f"{e:.2f}", f"{db:.2f}", f"{dl:.2f}", f"{dl/e:.1f}x", f"{db/dl:.1f}x",
+                             f"{db/d1:.1f}x" if d1 else "N/A", f"{dl/d1:.1f}x" if d1 else "N/A"])
+        print(md(["Corpus", "Length", "S2 encode", "S2 dec (bit)", "S2 dec (table)", "dec/enc (table)",
+                  "bit/table", "S2/S1 dec (bit)", "S2/S1 dec (table)"], rows))
+        for lab, s in (("bit-serial", "S2-dom-bit"), ("table-driven", "S2-dom-table")):
+            v = [med(c, n, s, "decode") / med(c, n, "S1-6bit", "decode") for c in corpora for n in lengths
+                 if med(c, n, "S1-6bit", "decode") and med(c, n, s, "decode")]
+            if v: print(f"S2/S1 decode ratio ({lab}) over corpora and lengths: {min(v):.1f}-{max(v):.1f}x")
+        print()
 
-    print("## T3b - Python-side latency at 20,000 chars, us (median encode / decode)\n")
-    rows = []
-    for c in corpora:
-        for s in ["S3-zstd", "S3d-dom", "S3d-en", "S4-utf8", "S5-hs8", "S5-hs11"]:
-            v = pyt.get((c, 20000, s))
-            if v:
-                rows.append([c.upper(), s, f"{st.median(x[0] for x in v)/1e3:.1f}", f"{st.median(x[1] for x in v)/1e3:.1f}"])
-    print(md(["Corpus", "Scheme", "Encode median", "Decode median"], rows))
+    sizes = load(R / "results_c_sizes.csv")
+    if sizes:
+        sz = {(r["corpus"], int(r["length"]), int(r["slice"]), r["scheme"]): int(r["encoded_bytes"]) for r in sizes}
+        ks = sorted({k[2] for k in sz})
+        print(f"## XS - crossover robustness: slices (of {len(ks)}) on which a scheme's payload is "
+              "smaller than S2-dom's\n")
+        rows = []
+        for c in corpora:
+            for n in lengths:
+                if (c, n, 0, "S2-dom-bit") not in sz: continue
+                row = [c.upper(), f"{n:,}"]
+                for s in ("S3-zstd", "S3d-dom", "S5-hs8", "S5-hs11", "S6-unishox"):
+                    row.append(sum(sz[(c, n, k, s)] < sz[(c, n, k, "S2-dom-bit")] for k in ks))
+                rows.append(row)
+        print(md(["Corpus", "Length", "S3-zstd", "S3d-dom", "S5-hs8", "S5-hs11", "S6-unishox"], rows))
+        print("## XR - bits/char range over slices (min-max)\n")
+        rows = []
+        for c in corpora:
+            for n in lengths:
+                if (c, n, 0, "S2-dom-bit") not in sz: continue
+                row = [c.upper(), f"{n:,}"]
+                for s in ("S2-dom-bit", "S3-zstd", "S3d-dom", "S5-hs8", "S6-unishox"):
+                    v = [8 * sz[(c, n, k, s)] / n for k in ks]
+                    row.append(f"{min(v):.3f}-{max(v):.3f}")
+                rows.append(row)
+        print(md(["Corpus", "Length", "S2-dom", "S3-zstd", "S3d-dom", "S5-hs8", "S6-unishox"], rows))
 
     kem = load(R / "results_kem.csv")
     if kem:
@@ -169,7 +209,7 @@ def main() -> int:
 
     print("## XO - crossover report (smallest length at which scheme beats S2-dom)\n")
     for c in corpora:
-        for s in ["S3-zstd", "S3d-dom", "S5-hs8", "S5-hs11"]:
+        for s in ["S3-zstd", "S3d-dom", "S5-hs8", "S5-hs11", "S6-unishox"]:
             wins = [n for n in lengths if (c, n, s) in bpc and (c, n, "S2-dom") in bpc and bpc[(c, n, s)] < bpc[(c, n, "S2-dom")]]
             losses = [n for n in lengths if (c, n, s) in bpc and (c, n, "S2-dom") in bpc and bpc[(c, n, s)] >= bpc[(c, n, "S2-dom")]]
             if not wins: msg = "never beats S2-dom at tested lengths"

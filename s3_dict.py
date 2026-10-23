@@ -49,8 +49,12 @@ TRAIN = {
     "c3": ("s2_train_c3.txt", "chunks"),
     "c4": ("s2_train_c4.txt", "lines"),
 }
+# C5 (real sensor readings) is optional: its training text exists only after
+# make_c5_intel.py has been run on the Intel Lab data file.
+if pathlib.Path("s2_train_c5.txt").exists():
+    TRAIN["c5"] = ("s2_train_c5.txt", "lines")
 # C1 is the English-domain corpus: its domain dictionary IS the English one.
-DOMAIN_OF = {"c1": "en", "c2": "c2", "c3": "c3", "c4": "c4"}
+DOMAIN_OF = {"c1": "en", "c2": "c2", "c3": "c3", "c4": "c4", "c5": "c5"}
 
 
 def _samples(path: str, rule: str) -> list[bytes]:

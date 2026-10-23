@@ -1,5 +1,5 @@
 """
-harness.py — Phase 2/3 benchmark harness.
+harness.py - Phase 2/3 benchmark harness.
 
 Pipeline per message (the FIPS 203 KEM-DEM construction):
     sender:   ss, ct_kem = ML-KEM-512.Encaps(pk)     [once per session]
@@ -13,7 +13,7 @@ Measured per (corpus x length x scheme), REPS repetitions each:
     t_encode, t_aead_enc, t_aead_dec, t_decode   (perf_counter_ns)
     encoded_bytes, aead_ct_bytes                 (sizes)
 KEM costs (keygen/encaps/decaps) are session-level and measured once,
-REPS times, into their own CSV — they are scheme-independent by design.
+REPS times, into their own CSV - they are scheme-independent by design.
 
 Output: results_pipeline.csv, results_kem.csv
 Usage:  python3 harness.py [--reps 30] [--warmup 5] [--outdir results]
@@ -34,6 +34,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import s1_sixbit
 import s3_dict
 import s5_heatshrink
+import s6_unishox
 from s2_huffman import HuffmanTable
 
 # ---------------- HKDF-SHA256 (extract+expand, RFC 5869) ----------------
@@ -61,6 +62,7 @@ def build_schemes():
     zd = zstandard.ZstdDecompressor()
     dicts = s3_dict.build_dicts()          # S3d: pre-shared zstd dictionaries
     hs = s5_heatshrink.codecs()            # S5: MCU-class LZSS, stateless
+    ux = s6_unishox.UnishoxCodec()         # S6: short-string coder, stateless
 
     def s3e(t): return zc.compress(t.encode("utf-8"))
     def s3d(b): return zd.decompress(b).decode("utf-8")
@@ -83,6 +85,7 @@ def build_schemes():
             "S4-utf8": (s4e, s4d, lambda t: t),
             "S5-hs8":  (hs["S5-hs8"].encode, hs["S5-hs8"].decode, lambda t: t),
             "S5-hs11": (hs["S5-hs11"].encode, hs["S5-hs11"].decode, lambda t: t),
+            "S6-unishox": (ux.encode, ux.decode, lambda t: t),
         }
     return make
 

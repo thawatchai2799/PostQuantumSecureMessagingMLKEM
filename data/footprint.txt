@@ -5,3 +5,12 @@
 == ARM Cortex-M4 -Os codec-only ==
    text	   data	    bss	    dec	    hex	filename
    2062	      0	   9544	  11606	   2d56	codec_arm.o
+
+== ARM Cortex-M4 -Os heatshrink encoder+decoder, static, window 2^8 ==
+   text	   data	    bss	    dec	    hex	filename
+    940	      0	      0	    940	    3ac	/home/user1/mlkem-encoding-paper/run3/build/arm_heatshrink_encoder.o
+    570	      0	      0	    570	    23a	/home/user1/mlkem-encoding-paper/run3/build/arm_heatshrink_decoder.o
+
+== ARM Cortex-M4 -Os Unishox2 (compress+decompress) ==
+   text	   data	    bss	    dec	    hex	filename
+   7498	    408	     95	   8001	   1f41	/home/user1/mlkem-encoding-paper/run3/build/arm_unishox2.o

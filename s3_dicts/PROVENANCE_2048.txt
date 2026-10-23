@@ -5,3 +5,4 @@ en: train=s2_train.txt rule=chunks bytes=2048 dict_id=898303119 sha256=21db47a1d
 c2: train=s2_train_c2.txt rule=lines bytes=2048 dict_id=91759415 sha256=3eec99edd1a8a089a539cfff4a175c60adb9fa373c108efc4017efcd43553b05
 c3: train=s2_train_c3.txt rule=chunks bytes=2048 dict_id=1080799814 sha256=1948ea5764147ce0595754bbc53691ec880476f03ff30edc3865b9eda69dd25c
 c4: train=s2_train_c4.txt rule=lines bytes=2048 dict_id=1959857438 sha256=6bd1918b1ce536455c0d85551f497448bcfda98ad0ddf43e88227bf2511b2d2a
+c5: train=s2_train_c5.txt rule=lines bytes=2048 dict_id=50216567 sha256=f03e101641feb96b2fa2e7b0a06ef09aa9d594232c44485acb0a25bd0b829a4a
