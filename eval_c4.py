@@ -13,6 +13,8 @@ construction mirrors harness.py exactly:
   S3d-dom : zstd + pre-shared dictionary trained on s2_train_c4.txt
   S3d-en  : zstd + the English dictionary (cross-domain)
   S4-utf8 : UTF-8 passthrough
+  S5-hs8  : heatshrink LZSS, 256 B window (MCU-class, stateless)
+  S5-hs11 : heatshrink LZSS, 2 KiB window
 Round-trip verified per cell (exact for S2*/S3/S4; canonicalized for S1).
 
 Output: results_c4.csv (corpus,length,scheme,encoded_bytes,bpc,
@@ -27,10 +29,12 @@ import zstandard
 try:
     import s1_sixbit
     import s3_dict
+    import s5_heatshrink
     from s2_huffman import HuffmanTable
 except ImportError:
     raise SystemExit(
-        "ERROR: cannot import the codec modules (s1_sixbit / s2_huffman).\n"
+        "ERROR: cannot import the codec modules (s1_sixbit / s2_huffman / s5_heatshrink).\n"
+        "If heatshrink2 is missing: pip install heatshrink2\n"
         "Run this from the experiment directory that contains harness.py\n"
         "(e.g. ~/mlkem-encoding-paper/run2), not from Downloads.")
 
@@ -50,6 +54,7 @@ def main() -> int:
     zc = zstandard.ZstdCompressor(level=3)
     zd = zstandard.ZstdDecompressor()
     d3 = s3_dict.codecs_for("c4", s3_dict.build_dicts())
+    hs = s5_heatshrink.codecs()
 
     schemes = {
         "S1-6bit": (lambda t: s1_sixbit.encode(t, mode="drop"),
@@ -65,6 +70,8 @@ def main() -> int:
         "S4-utf8": (lambda t: t.encode("utf-8"),
                     lambda b: b.decode("utf-8"),
                     lambda t: t),
+        "S5-hs8":  (hs["S5-hs8"].encode, hs["S5-hs8"].decode, lambda t: t),
+        "S5-hs11": (hs["S5-hs11"].encode, hs["S5-hs11"].decode, lambda t: t),
     }
 
     rows = []

@@ -1,6 +1,7 @@
 """verify_c.py — Byte-exact C-vs-Python verification (both directions).
-Run after any change to encoders.c or the training corpora:
-    python3 gen_s2_tables.py && gcc -O2 -o encoders encoders.c && python3 verify_c.py
+Run after any change to codec.c or the training corpora:
+    python3 gen_s2_tables.py && gcc -O2 -o bench codec.c bench_main.c && python3 verify_c.py
+Checks S1, S2 (bit-serial decoder) and S2 (table-driven decoder).
 Passes only if every C output equals the Python reference byte-for-byte."""
 import pathlib, subprocess, sys
 import s1_sixbit
@@ -32,7 +33,10 @@ for cdir in sorted(pathlib.Path("corpus").iterdir()):
         ok2 = c_run("dec",sch,"/tmp/c.bin","/tmp/c.txt").decode() == text
         pathlib.Path("/tmp/py.bin").write_bytes(py)
         ok3 = c_run("dec",sch,"/tmp/py.bin","/tmp/c2.txt").decode() == text
-        total += 3; fails += (not ok1)+(not ok2)+(not ok3)
-        if not (ok1 and ok2 and ok3): print("S2 FAIL", fp)
+        # table-driven decoder must reproduce the bit-serial decoder exactly
+        ok4 = c_run("dec",sch+"-lut","/tmp/c.bin","/tmp/c3.txt").decode() == text
+        ok5 = c_run("dec",sch+"-lut","/tmp/py.bin","/tmp/c4.txt").decode() == text
+        total += 5; fails += (not ok1)+(not ok2)+(not ok3)+(not ok4)+(not ok5)
+        if not (ok1 and ok2 and ok3 and ok4 and ok5): print("S2 FAIL", fp)
 print(f"byte-exact checks: {total-fails}/{total} passed")
 sys.exit(1 if fails else 0)

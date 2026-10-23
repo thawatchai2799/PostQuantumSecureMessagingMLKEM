@@ -230,13 +230,13 @@ def preflight(out: pathlib.Path):
         if not which(tool):
             missing.append(f"tool: {tool}")
     mods = {}
-    for mod in ["oqs", "zstandard", "cryptography", "pandas", "matplotlib"]:
+    for mod in ["oqs", "zstandard", "heatshrink2", "cryptography", "pandas", "matplotlib"]:
         try:
             m = __import__(mod)
             mods[mod] = getattr(m, "__version__", "?")
         except Exception as e:  # noqa: BLE001
             missing.append(f"python module: {mod} ({e.__class__.__name__})")
-    for f in ["codec.c", "bench_main.c", "s1_sixbit.py", "s2_huffman.py", "s3_dict.py",
+    for f in ["codec.c", "bench_main.c", "s1_sixbit.py", "s2_huffman.py", "s3_dict.py", "s5_heatshrink.py",
               "harness.py", "gen_s2_tables.py", "make_c1_english.py", "make_c2_iot.py",
               "make_c3_uniform.py", "make_c4_modern.py", "make_s2_train_en.py",
               "test_roundtrip.py", "verify_c.py", "analyze.py", "eval_c4.py",
@@ -450,7 +450,10 @@ def c_latency_plan():
     plan = []
     for c, fp in pipeline_plan():
         n = int(fp.stem.split("_")[1])
-        schemes = [C_SCHEME_FOR_CORPUS[c]] if c == "c2" else ["s1", C_SCHEME_FOR_CORPUS[c]]
+        s2 = C_SCHEME_FOR_CORPUS[c]
+        # S2 is timed twice: bit-serial decoder (s2xx) and table-driven decoder
+        # (s2xx-lut); the encoder is identical in both runs.
+        schemes = [s2, s2 + "-lut"] if c == "c2" else ["s1", s2, s2 + "-lut"]
         for sch in schemes:
             plan.append((c, n, sch, fp))
     return plan
@@ -489,6 +492,52 @@ def footprint(out: pathlib.Path):
         txt += "\n(ARM toolchain absent - install gcc-arm-none-eabi to collect the Cortex-M4 footprint)\n"
         CON.log("footprint: x86 only (no ARM toolchain)")
     write(out / "footprint.txt", txt)
+
+
+# --------------------------------------------------------------------------
+# stage 6b: instruction counts (deterministic; optional, needs valgrind)
+# --------------------------------------------------------------------------
+CALLGRIND_CASES = [("s1", "c1"), ("s2en", "c1"), ("s2en-lut", "c1"),
+                   ("s2c2", "c2"), ("s2c2-lut", "c2"), ("s2c3", "c3"), ("s2c3-lut", "c3")]
+
+
+def callgrind(out: pathlib.Path):
+    """Instruction counts per character for encode and decode at 20,000 chars.
+    baseline = the same binary run on an empty input, so process start-up,
+    table construction and file I/O cancel out."""
+    if not which("valgrind"):
+        write(out / "callgrind.txt", "(valgrind absent - install valgrind to collect instruction counts)\n")
+        CON.log("callgrind: skipped (valgrind not installed)")
+        return
+    tmp = out / "cg_tmp"
+    tmp.mkdir(exist_ok=True)
+    empty = tmp / "empty.txt"
+    empty.write_bytes(b"")
+
+    def irefs(args):
+        r = subprocess.run(["valgrind", "--tool=callgrind", "--callgrind-out-file=/dev/null",
+                            "./bench"] + args, capture_output=True, text=True)
+        for line in r.stderr.splitlines():
+            if "I" in line and "refs:" in line:
+                return int(line.split("refs:")[1].strip().replace(",", ""))
+        raise StageError("callgrind produced no instruction count: " + r.stderr[-400:])
+
+    lines = ["# valgrind --tool=callgrind, gcc -O2, 20,000-char inputs.",
+             "# instr/char = (I refs - I refs of the empty-input run of the same op) / 20000",
+             f"{'scheme':<10}{'op':<8}{'I refs':>12}{'baseline':>12}{'instr/char':>12}"]
+    base = {"enc": irefs(["enc", "s1", str(empty), str(tmp / "o.bin")]),
+            "dec": irefs(["dec", "s1", str(empty), str(tmp / "o.txt")])}
+    for sch, c in CALLGRIND_CASES:
+        src = ROOT / "corpus" / c / f"{c}_20000.txt"
+        enc = tmp / f"{sch}.bin"
+        sh(["./bench", "enc", sch, str(src), str(enc)])
+        ie = irefs(["enc", sch, str(src), str(tmp / "o.bin")])
+        idn = irefs(["dec", sch, str(enc), str(tmp / "o.txt")])
+        lines.append(f"{sch:<10}{'encode':<8}{ie:>12,}{base['enc']:>12,}{(ie - base['enc']) / 20000:>12.2f}")
+        lines.append(f"{sch:<10}{'decode':<8}{idn:>12,}{base['dec']:>12,}{(idn - base['dec']) / 20000:>12.2f}")
+    shutil.rmtree(tmp, ignore_errors=True)
+    write(out / "callgrind.txt", "\n".join(lines) + "\n")
+    CON.log("callgrind: instruction counts collected")
 
 
 # --------------------------------------------------------------------------
@@ -540,7 +589,8 @@ def integrity(out: pathlib.Path, reps: int):
             problems.append(name)
     for name in ["results_c4.csv", "results_dict_size.csv", "paper_tables.md",
                  "footprint.txt", "environment.txt", "verify_c.txt", "verify_python.txt",
-                 "summary_pipeline.txt", "figures/fig_rq1_bpc.png", "figures/fig_rq3_tradeoff.png"]:
+                 "summary_pipeline.txt", "callgrind.txt", "figures/fig_rq1_bpc.png",
+                 "figures/fig_rq2_decoder.png", "figures/fig_rq3_tradeoff.png"]:
         if not (out / name).exists():
             problems.append(name + " (missing)")
     for name in ["results_c4.csv", "results_dict_size.csv"]:
@@ -566,7 +616,7 @@ def package(out: pathlib.Path) -> pathlib.Path:
 # --------------------------------------------------------------------------
 PY_COST_PER_CHAR = {"S1-6bit": 2.0e-6, "S2-dom": 2.5e-6, "S2-en": 2.5e-6,
                     "S3-zstd": 0.05e-6, "S3d-dom": 0.05e-6, "S3d-en": 0.05e-6,
-                    "S4-utf8": 0.01e-6}
+                    "S4-utf8": 0.01e-6, "S5-hs8": 0.1e-6, "S5-hs11": 0.1e-6}
 C_COST_PER_CHAR = 2 * 15e-9
 
 
@@ -585,8 +635,10 @@ def register_tasks(reps: int, warmup: int):
                     PROG.add(f"pipeline {c} {n} {s}", 0.02 + (reps + warmup) * n * PY_COST_PER_CHAR[s])
     for c in CORPORA:
         for n in REQUIRED_LENGTHS:
-            for sch in ([C_SCHEME_FOR_CORPUS[c]] if c == "c2" else ["s1", C_SCHEME_FOR_CORPUS[c]]):
+            s2 = C_SCHEME_FOR_CORPUS[c]
+            for sch in ([s2, s2 + "-lut"] if c == "c2" else ["s1", s2, s2 + "-lut"]):
                 PROG.add(f"c-latency {c} {n} {sch}", 0.03 + reps * n * C_COST_PER_CHAR)
+    PROG.add("callgrind", 6)
     PROG.add("footprint", 1)
     PROG.add("summaries", 8)
     PROG.add("figures", 4)
@@ -624,6 +676,7 @@ def main() -> int:
         pipeline(out, args.reps, args.warmup)          # per-task progress inside
         c_latency(out, args.reps)                      # per-task progress inside
         run_task("footprint", footprint, out)
+        run_task("callgrind", callgrind, out)
         run_task("summaries", lambda o: (c_latency_summary(o), summaries(o)), out)
         run_task("figures", figures, out)
         run_task("integrity", integrity, out, args.reps)

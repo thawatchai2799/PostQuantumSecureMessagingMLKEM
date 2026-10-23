@@ -33,6 +33,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import s1_sixbit
 import s3_dict
+import s5_heatshrink
 from s2_huffman import HuffmanTable
 
 # ---------------- HKDF-SHA256 (extract+expand, RFC 5869) ----------------
@@ -59,6 +60,7 @@ def build_schemes():
     zc = zstandard.ZstdCompressor(level=3)
     zd = zstandard.ZstdDecompressor()
     dicts = s3_dict.build_dicts()          # S3d: pre-shared zstd dictionaries
+    hs = s5_heatshrink.codecs()            # S5: MCU-class LZSS, stateless
 
     def s3e(t): return zc.compress(t.encode("utf-8"))
     def s3d(b): return zd.decompress(b).decode("utf-8")
@@ -79,6 +81,8 @@ def build_schemes():
             "S3d-dom": (d3["S3d-dom"].encode, d3["S3d-dom"].decode, lambda t: t),
             "S3d-en":  (d3["S3d-en"].encode, d3["S3d-en"].decode, lambda t: t),
             "S4-utf8": (s4e, s4d, lambda t: t),
+            "S5-hs8":  (hs["S5-hs8"].encode, hs["S5-hs8"].decode, lambda t: t),
+            "S5-hs11": (hs["S5-hs11"].encode, hs["S5-hs11"].decode, lambda t: t),
         }
     return make
 

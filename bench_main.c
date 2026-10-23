@@ -17,15 +17,24 @@ static uint64_t now_ns(void) {
     return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
 }
 
+/* scheme names: s1 | s2en | s2c2 | s2c3  (bit-serial S2 decoder)
+ *               s2en-lut | s2c2-lut | s2c3-lut  (table-driven S2 decoder;
+ *               the encoder is the same in both variants) */
+static int g_lut = 0;
 static int pick(const char *s, s2_table_id *id) {
-    if (!strcmp(s, "s2en")) { *id = S2_TABLE_EN; return 1; }
-    if (!strcmp(s, "s2c2")) { *id = S2_TABLE_C2; return 1; }
-    if (!strcmp(s, "s2c3")) { *id = S2_TABLE_C3; return 1; }
+    size_t L = strlen(s);
+    if (L > 4 && !strcmp(s + L - 4, "-lut")) { g_lut = 1; L -= 4; }
+    if (L == 4 && !strncmp(s, "s2en", 4)) { *id = S2_TABLE_EN; return 1; }
+    if (L == 4 && !strncmp(s, "s2c2", 4)) { *id = S2_TABLE_C2; return 1; }
+    if (L == 4 && !strncmp(s, "s2c3", 4)) { *id = S2_TABLE_C3; return 1; }
     return 0;
+}
+static long s2dec(s2_table_id id, const uint8_t *in, size_t n, uint8_t *out) {
+    return g_lut ? s2_decode_lut_id(id, in, n, out) : s2_decode_id(id, in, n, out);
 }
 
 int main(int argc, char **argv) {
-    if (argc < 4) { fprintf(stderr, "usage: bench <enc|dec|time> <s1|s2en|s2c2|s2c3> <in> [out|reps]\n"); return 2; }
+    if (argc < 4) { fprintf(stderr, "usage: bench <enc|dec|time> <s1|s2en|s2c2|s2c3|s2en-lut|s2c2-lut|s2c3-lut> <in> [out|reps]\n"); return 2; }
     codec_init();
     const char *op = argv[1], *sch = argv[2];
     FILE *f = fopen(argv[3], "rb");
@@ -38,13 +47,13 @@ int main(int argc, char **argv) {
     if (!is_s1 && !pick(sch, &id)) { fprintf(stderr, "bad scheme\n"); return 2; }
 
 #define ENC() (is_s1 ? s1_encode(g_in, n, g_out) : s2_encode_id(id, g_in, n, g_out))
-#define DEC(m) (is_s1 ? s1_decode(g_out, (size_t)(m), g_back) : s2_decode_id(id, g_out, (size_t)(m), g_back))
+#define DEC(m) (is_s1 ? s1_decode(g_out, (size_t)(m), g_back) : s2dec(id, g_out, (size_t)(m), g_back))
 
     if (!strcmp(op, "enc") || !strcmp(op, "dec")) {
         if (argc < 5) { fprintf(stderr, "need outfile\n"); return 2; }
         long m;
         if (!strcmp(op, "enc")) m = ENC();
-        else m = is_s1 ? s1_decode(g_in, n, g_out) : s2_decode_id(id, g_in, n, g_out);
+        else m = is_s1 ? s1_decode(g_in, n, g_out) : s2dec(id, g_in, n, g_out);
         if (m < 0) { fprintf(stderr, "codec error\n"); return 1; }
         FILE *fo = fopen(argv[4], "wb");
         fwrite(g_out, 1, (size_t)m, fo);

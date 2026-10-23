@@ -22,7 +22,11 @@ make_s2_train_en.py      Builds s2_train.txt (English pre-shared training
 eval_dict_size.py        S3d sensitivity to dictionary size (payload only)
 make_tables.py           Prints the paper's tables (Markdown) from a results dir
 codec.c / codec.h        C implementations of S1 (6-bit) and S2 (Huffman);
-                         static allocation only, embedded-friendly
+                         static allocation only, embedded-friendly. S2 has
+                         two decoders: bit-serial (reference) and
+                         table-driven (9-bit lookup, production style)
+s5_heatshrink.py         S5: heatshrink LZSS (MCU-class compressor, stateless),
+                         two window sizes (256 B, 2 KiB)
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
 s2_tables.h              Auto-generated canonical Huffman tables (do not edit)
 gen_s2_tables.py         Regenerates s2_tables.h from the training corpora
@@ -104,7 +108,11 @@ gcc -O2 -o bench codec.c bench_main.c
 python3 verify_c.py
 
 # Time a single codec on a single file (CSV to stdout)
-./bench time s2en corpus/c1/c1_20000.txt 100
+./bench time s2en corpus/c1/c1_20000.txt 100        # bit-serial S2 decoder
+./bench time s2en-lut corpus/c1/c1_20000.txt 100    # table-driven S2 decoder
+
+# Instruction counts (deterministic; needs valgrind) - run_all.py does this
+valgrind --tool=callgrind --callgrind-out-file=/dev/null ./bench dec s2en-lut enc.bin out.txt
 
 # Regenerate the paper's figures from the committed data
 python3 make_figures.py --datadir data --outdir figures
@@ -114,6 +122,26 @@ gcc -Os -c codec.c -o codec_os.o && size codec_os.o
 arm-none-eabi-gcc -Os -mcpu=cortex-m4 -c codec.c -o codec_arm.o \
   && arm-none-eabi-size codec_arm.o
 ```
+
+## S2 decoders
+
+`codec.c` contains two canonical-Huffman decoders that produce identical
+output (checked byte-for-byte by `verify_c.py`): `s2_decode` walks the
+stream one bit at a time (the reference), and `s2_decode_lut` peeks 9 bits,
+resolves (length, symbol) from a 512-entry lookup table (1 KiB per code
+table, built at start-up from the code lengths) and falls back to the
+canonical walk only for codes longer than 9 bits. `run_all.py` times both
+(`results_c_latency.csv`, schemes `s2xx` and `s2xx-lut`) and records
+instruction counts for both in `callgrind.txt` when valgrind is installed.
+
+## S5: heatshrink (MCU-class compressor)
+
+libzstd needs far more working memory than a constrained node has, so S5
+adds heatshrink, an LZSS compressor written for microcontrollers (fixed
+buffers, no heap), through the `heatshrink2` binding of the reference C
+code. Two configurations are measured, both stateless: `S5-hs8` (256 B
+window, the usual MCU setting) and `S5-hs11` (2 KiB window, the library
+default, comparable in working memory to the S3d dictionary).
 
 ## S3d: pre-shared zstd dictionaries (fairness extension)
 

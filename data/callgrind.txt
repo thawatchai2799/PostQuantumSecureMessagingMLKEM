@@ -1,14 +1,17 @@
-s1 /tmp/empty.txt: ==4585== I   refs:      232,477
-s1 corpus/c1/c1_20000.txt: ==4587== I   refs:      832,341
-s2en corpus/c1/c1_20000.txt: ==4589== I   refs:      686,187
-s2c2 corpus/c2/c2_20000.txt: ==4591== I   refs:      689,356
-s2c3 corpus/c3/c3_20000.txt: ==4593== I   refs:      731,533
-
-# Re-measurement after the English training text was replaced (s2_train.txt
-# from Gutenberg #161). Same compiler (gcc 13.3.0, Ubuntu 24.04), -O2,
-# valgrind --tool=callgrind, encode path, baseline = empty-input invocation.
-# Only the English table changed; the C2/C3 tables are unchanged.
-# Control: with the previous tables the same procedure reproduces the
-# values above (S1 29.99, S2-en 22.69 instructions/char).
-s1   empty                  I refs: 362,461   (baseline, this host, new tables)
-s2en corpus/c1/c1_20000.txt I refs: 811,151   -> (811,151 - 362,461) / 20,000 = 22.43 instructions/char
+# valgrind --tool=callgrind, gcc -O2, 20,000-char inputs.
+# instr/char = (I refs - I refs of the empty-input run of the same op) / 20000
+scheme    op            I refs    baseline  instr/char
+s1        encode       856,960     257,096       29.99
+s1        decode       609,886     255,630       17.71
+s2en      encode       705,783     257,096       22.43
+s2en      decode     2,105,026     255,630       92.47
+s2en-lut  encode       705,813     257,096       22.44
+s2en-lut  decode       800,114     255,630       27.22
+s2c2      encode       713,994     257,096       22.84
+s2c2      decode     2,197,319     255,630       97.08
+s2c2-lut  encode       714,024     257,096       22.85
+s2c2-lut  decode       773,029     255,630       25.87
+s2c3      encode       756,177     257,096       24.95
+s2c3      decode     2,422,250     255,630      108.33
+s2c3-lut  encode       756,207     257,096       24.96
+s2c3-lut  decode       800,668     255,630       27.25

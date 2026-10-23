@@ -79,6 +79,7 @@ long s1_decode(const uint8_t *in, size_t n, uint8_t *out) {
 #define S2_NSYM 257                                  /* bytes + EOF */
 #define S2_EOF  256
 #define S2_MAXLEN 32
+#define S2_LUT_BITS 9    /* 512 entries x 2 bytes = 1 KiB per table */
 
 typedef struct {
     /* encode side */
@@ -90,6 +91,10 @@ typedef struct {
     uint16_t offset[S2_MAXLEN + 1];
     uint16_t sorted[S2_NSYM];                        /* symbols by (len,sym) */
     int      max_len;
+    /* table-driven decode side: one S2_LUT_BITS-bit lookup table.
+     * entry = (len << 9) | symbol for codes of length <= S2_LUT_BITS;
+     * entry = 0 means "longer code: fall back to the canonical walk". */
+    uint16_t lut[1u << S2_LUT_BITS];
 } s2_table_t;
 
 /* Final, correct version (mirrors Python exactly):
@@ -120,6 +125,16 @@ static void s2_build_final(s2_table_t *t, const uint8_t *lens) {
             if (k == 0) t->first_code[L] = code;
             code++;
         }
+    }
+    /* fill the direct lookup table: every prefix of length S2_LUT_BITS that
+     * starts with a short code maps to (len, symbol) */
+    for (int s = 0; s < S2_NSYM; s++) {
+        int L = t->len[s];
+        if (L == 0 || L > S2_LUT_BITS) continue;
+        uint32_t base = t->code[s] << (S2_LUT_BITS - L);
+        uint32_t fill = 1u << (S2_LUT_BITS - L);
+        for (uint32_t f = 0; f < fill; f++)
+            t->lut[base + f] = (uint16_t)((L << 9) | s);
     }
 }
 
@@ -157,6 +172,48 @@ static long s2_decode(const s2_table_t *t, const uint8_t *in, size_t n,
     return -1;                                       /* EOF not found */
 }
 
+/* Table-driven canonical decoder (the production-style variant).
+ * Peeks S2_LUT_BITS bits, resolves (len, symbol) in one lookup and
+ * consumes len bits.  Codes longer than S2_LUT_BITS (rare symbols)
+ * fall back to the canonical first_code/count walk starting at
+ * length S2_LUT_BITS + 1.  Output is byte-identical to s2_decode(). */
+static long s2_decode_lut(const s2_table_t *t, const uint8_t *in, size_t n,
+                          uint8_t *out) {
+    uint64_t acc = 0;        /* bit buffer; only the low nbits are meaningful */
+    int nbits = 0; size_t i = 0, o = 0;
+    for (;;) {
+        if (nbits < 24) {    /* refill rarely (every few symbols), to >= 56 bits */
+            while (nbits <= 56 && i < n) { acc = (acc << 8) | in[i++]; nbits += 8; }
+            if (nbits <= 0) return -1;               /* EOF not found */
+        }
+        uint32_t peek;
+        if (nbits >= S2_LUT_BITS)
+            peek = (uint32_t)(acc >> (nbits - S2_LUT_BITS)) & ((1u << S2_LUT_BITS) - 1);
+        else                                         /* tail: zero-pad */
+            peek = (uint32_t)((acc & (((uint64_t)1 << nbits) - 1)) << (S2_LUT_BITS - nbits));
+        uint16_t e = t->lut[peek];
+        int L = e >> 9;
+        uint16_t s;
+        if (L) {
+            if (L > nbits) return -1;                /* truncated stream */
+            s = e & 0x1FF;
+        } else {                                     /* long code: canonical walk */
+            L = S2_LUT_BITS + 1;
+            for (;; L++) {
+                if (L > t->max_len || L > nbits) return -1;
+                uint32_t code = (uint32_t)(acc >> (nbits - L)) & ((1u << L) - 1);
+                if (t->count[L] && code >= t->first_code[L] &&
+                    code < t->first_code[L] + t->count[L]) {
+                    s = t->sorted[t->offset[L] + (code - t->first_code[L])];
+                    break;
+                }
+            }
+        }
+        nbits -= L;
+        if (s == S2_EOF) return (long)o;
+        out[o++] = (uint8_t)s;
+    }
+}
 
 /* ---- table instances + init + id-dispatch API ---- */
 static s2_table_t T_EN, T_C2, T_C3;
@@ -173,3 +230,5 @@ long s2_encode_id(s2_table_id id, const uint8_t *in, size_t n, uint8_t *out)
 { return s2_encode(tab(id), in, n, out); }
 long s2_decode_id(s2_table_id id, const uint8_t *in, size_t n, uint8_t *out)
 { return s2_decode(tab(id), in, n, out); }
+long s2_decode_lut_id(s2_table_id id, const uint8_t *in, size_t n, uint8_t *out)
+{ return s2_decode_lut(tab(id), in, n, out); }

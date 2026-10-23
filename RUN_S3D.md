@@ -24,13 +24,15 @@ to `run_all.py`; they are used instead of downloading.
 - `results_pipeline.csv`, `results_kem.csv`, `results_c_latency.csv` (raw, n = reps)
 - `results_c4.csv`, `results_dict_size.csv`
 - `paper_tables.md` (all tables, Markdown) and `figures/`
-- `verify_python.txt`, `verify_c.txt`, `footprint.txt`, `environment.txt`
+- `verify_python.txt`, `verify_c.txt`, `footprint.txt`, `callgrind.txt`, `environment.txt`
 - `s3_dicts/` (dictionary bytes, IDs, SHA-256), `s2_train*.txt`, `corpus-snapshot/`
 - `timings.csv`, `run.log`
 
 ## Checks before sending
 - `run.log` ends with `DONE` and the integrity lines all say `OK`
-- `verify_c.txt`: N/N passed (N = 91 with 7 message lengths)
+- `verify_c.txt`: N/N passed (N = 133 with 7 message lengths: S1, S2 bit-serial, S2 table-driven)
 - `s3_dicts/PROVENANCE_2048.txt`: every dictionary is 2048 bytes
   (a smaller `en` dictionary means the English training text did not download)
-- Optional: install `gcc-arm-none-eabi` first so `footprint.txt` includes the Cortex-M4 section
+- Optional: install `gcc-arm-none-eabi` first so `footprint.txt` includes the Cortex-M4 section,
+  and `valgrind` so `callgrind.txt` contains instruction counts (`sudo apt install valgrind`)
+- New Python dependency: `pip install heatshrink2` (inside the venv)
