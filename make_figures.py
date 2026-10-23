@@ -14,18 +14,54 @@ Outputs (in --outdir):
     fig_rq2_decoder.{png,pdf}    C-codec latency vs length: S1 and S2 encode,
                                  S2 decode with bit-serial vs table-driven decoder
     fig_rq3_tradeoff.{png,pdf}   payload vs computation trade-off at 5,000
-                                 chars, every scheme timed in C
+                                 chars, every scheme timed in C, one panel
+                                 per primary corpus, every point labeled
 """
 
 import argparse
 import pathlib
 
 import matplotlib
+import matplotlib.transforms
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
 ENTROPY_54 = 5.755  # log2(54)
+
+
+def place_labels(fig, ax, pts):
+    """Label every point; try a fixed list of offsets (points) and keep the
+    first whose text box overlaps no earlier label, no marker, and stays
+    inside the axes."""
+    fig.canvas.draw()
+    rend = fig.canvas.get_renderer()
+    axbox = ax.get_window_extent(rend)
+    marker_boxes = []
+    for x, y, _, _ in pts:
+        px, py = ax.transData.transform((x, y))
+        marker_boxes.append(matplotlib.transforms.Bbox.from_extents(px - 5, py - 5, px + 5, py + 5))
+    taken = []
+    offsets = [(7, -3), (-7, -3), (0, 8), (0, -13), (7, 6), (-7, 6), (7, -12), (-7, -12),
+               (14, -3), (-14, -3), (0, 17), (0, -22), (18, 10), (-18, 10), (18, -16), (-18, -16)]
+    for x, y, text, col in sorted(pts, key=lambda p: (p[0], p[1])):
+        best = None
+        for dx, dy in offsets:
+            ha = "left" if dx > 0 else ("right" if dx < 0 else "center")
+            t = ax.annotate(text, (x, y), xytext=(dx, dy), textcoords="offset points",
+                            fontsize=9, color=col, ha=ha, va="bottom" if dy > 0 else "top" if dy < -5 else "center")
+            bb = t.get_window_extent(rend).expanded(1.05, 1.15)
+            inside = (bb.x0 >= axbox.x0 and bb.x1 <= axbox.x1 and bb.y0 >= axbox.y0 and bb.y1 <= axbox.y1)
+            clash = any(bb.overlaps(o) for o in taken) or any(bb.overlaps(m) for m in marker_boxes)
+            if inside and not clash:
+                best = t
+                break
+            t.remove()
+        if best is None:  # fall back to the first offset
+            dx, dy = offsets[0]
+            best = ax.annotate(text, (x, y), xytext=(dx, dy), textcoords="offset points",
+                               fontsize=9, color=col, ha="left", va="center")
+        taken.append(best.get_window_extent(rend).expanded(1.05, 1.15))
 
 
 def main() -> int:
@@ -105,30 +141,36 @@ def main() -> int:
     plt.savefig(o / "fig_rq2_decoder.pdf")
 
     # ---- Figure 3: trade-off at 5,000 characters, every scheme timed in C ----
-    marks = {"c1": "o", "c2": "s", "c3": "^"}
-    cols = {"S1-6bit": "#1f77b4", "S2-dom-bit": "#d62728", "S2-dom-table": "#ff7f0e",
-            "S3-zstd": "#2ca02c", "S3d-dom": "#17becf", "S4-utf8": "#7f7f7f",
-            "S5-hs8": "#bcbd22", "S5-hs11": "#8c6d31", "S6-unishox": "#9467bd"}
-    label = {"S2-dom-bit": "S2-dom (bit-serial dec.)", "S2-dom-table": "S2-dom (table-driven dec.)"}
+    # One panel per corpus; every point carries its own label, placed by a
+    # small deterministic search so that labels overlap neither each other
+    # nor the points.
+    schemes = [("S1-6bit", "S1", "o", "#1f77b4"), ("S2-dom-bit", "S2 bit-serial", "s", "#d62728"),
+               ("S2-dom-table", "S2 table", "s", "#ff7f0e"), ("S3-zstd", "S3", "^", "#2ca02c"),
+               ("S3d-dom", "S3d", "v", "#17becf"), ("S4-utf8", "S4", "X", "#7f7f7f"),
+               ("S5-hs8", "S5-hs8", "D", "#bcbd22"), ("S5-hs11", "S5-hs11", "D", "#8c6d31"),
+               ("S6-unishox", "S6", "P", "#9467bd")]
     payload = {"S2-dom-bit": "S2-dom", "S2-dom-table": "S2-dom"}
-    fig, ax = plt.subplots(figsize=(7.6, 4.6))
-    for c in ["c1", "c2", "c3"]:
-        for s, col in cols.items():
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4.4), sharey=True)
+    for ax, c in zip(axes, ["c1", "c2", "c3"]):
+        ax.tick_params(labelsize=10)
+        pts = []
+        for s, short, m, col in schemes:
             e = lmed[(lmed.corpus == c) & (lmed.length == 5000) & (lmed.scheme == s) & (lmed.op == "encode")]["us"].values
             dd = lmed[(lmed.corpus == c) & (lmed.length == 5000) & (lmed.scheme == s) & (lmed.op == "decode")]["us"].values
             b = bpc[(bpc.corpus == c) & (bpc.length == 5000) & (bpc.scheme == payload.get(s, s))]["bpc"].values
             if len(e) and len(dd) and len(b):
-                ax.scatter(b[0], e[0] + dd[0], color=col, marker=marks[c], s=50, zorder=3)
-    for s, col in cols.items():
-        ax.scatter([], [], color=col, label=label.get(s, s))
-    for c, m in marks.items():
-        ax.scatter([], [], color="k", marker=m, label=f"corpus {c}", facecolors="none")
-    ax.set_yscale("log")
-    ax.set_xlabel("bits per character (payload cost)")
-    ax.set_ylabel("encode+decode median latency, µs @5,000 chars")
-    ax.grid(alpha=0.3, which="both")
-    ax.legend(fontsize=7, ncol=1, loc="center left", bbox_to_anchor=(1.01, 0.5), frameon=False)
-    ax.set_title("Payload vs computation (all schemes timed in C)", fontsize=10)
+                ax.scatter(b[0], e[0] + dd[0], color=col, marker=m, s=60, zorder=3,
+                           edgecolors="k", linewidths=0.4)
+                pts.append((b[0], e[0] + dd[0], short, col))
+        ax.set_yscale("log")
+        ax.set_xlim(0.5, 10.8)
+        ax.set_ylim(0.03, 4e4)
+        ax.set_title(titles[c], fontsize=12)
+        ax.set_xlabel("bits per character (payload)", fontsize=11)
+        ax.grid(alpha=0.3, which="major")
+        place_labels(fig, ax, pts)
+    axes[0].set_ylabel("encode + decode median latency, µs", fontsize=11)
+    fig.suptitle("Payload vs computation at 5,000 characters (all schemes timed in C)", fontsize=12)
     plt.tight_layout()
     plt.savefig(o / "fig_rq3_tradeoff.png", dpi=200)
     plt.savefig(o / "fig_rq3_tradeoff.pdf")

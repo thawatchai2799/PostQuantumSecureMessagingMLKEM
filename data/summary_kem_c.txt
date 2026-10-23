@@ -1,0 +1,6 @@
+ML-KEM session costs timed in C (liboqs 0.16.0), median over 100 repetitions after 5 warm-up, microseconds
+
+parameter set    pk B   ct B    keygen    encaps    decaps      encaps IQR
+ML-KEM-512        800    768       4.2       4.7       5.2     4.7-4.7
+ML-KEM-768       1184   1088       7.0       7.5       8.7     7.0-7.6
+ML-KEM-1024      1568   1568       8.6       9.3      11.1     9.3-11.8

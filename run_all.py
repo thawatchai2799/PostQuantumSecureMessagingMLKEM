@@ -9,6 +9,7 @@ zip file. Nothing else has to be started by hand.
 
 Usage:
     python3 run_all.py [--reps 100] [--warmup 5] [--outroot results_phase3]
+    python3 run_all.py --kem-c-only <results dir>   (KEM timing in C only)
 
 Progress line (updated in place):
     [ 37.4%] elapsed 00:02:10 | remaining 00:03:38 | finish ~ 17:05:12 | stage ...
@@ -269,7 +270,7 @@ def preflight(out: pathlib.Path):
             missing.append(f"python module: {mod} ({e.__class__.__name__})")
     for f in ["codec.c", "bench_main.c", "bench_lib.c", "s1_sixbit.py", "s2_huffman.py", "s3_dict.py",
               "s5_heatshrink.py", "s6_unishox.py", "verify_lib.py", "make_slices.py", "make_c5_intel.py",
-              "bench_aead.c", "eval_cbor.py", "lora_airtime.py",
+              "bench_aead.c", "bench_kem.c", "eval_cbor.py", "lora_airtime.py",
               "third_party/heatshrink/heatshrink_encoder.c", "third_party/unishox2/unishox2.c",
               "harness.py", "gen_s2_tables.py", "make_c1_english.py", "make_c2_iot.py",
               "make_c3_uniform.py", "make_c4_modern.py", "make_s2_train_en.py",
@@ -369,6 +370,7 @@ def build_libs():
         raise StageError(str(e) + "\nThe AES-GCM timing driver needs the OpenSSL headers: "
                          "sudo apt install libssl-dev") from e
     CON.log(f"library codecs built (libzstd {ZSTD_VER}, heatshrink, Unishox2) and AES-GCM driver")
+    build_kem()
 
 
 # --------------------------------------------------------------------------
@@ -436,6 +438,87 @@ def verify(out: pathlib.Path):
     if a2 != b2:
         raise StageError("library byte-exact suite failed: " + line2[-1])
     CON.log(f"verification: {last}; {line[-1].strip()}; {line2[-1].strip()}")
+
+
+# --------------------------------------------------------------------------
+# stage 4a: ML-KEM session costs timed in C (liboqs C API)
+# --------------------------------------------------------------------------
+KEM_SETS = ["ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"]
+
+
+def find_liboqs():
+    """(include dir, shared library) of the liboqs that the Python binding
+    loads, so that C and Python time the same build. Falls back to
+    $OQS_INSTALL_PATH and ~/_oqs."""
+    cands = []
+    try:
+        import oqs  # noqa: F401
+        with open("/proc/self/maps") as m:
+            for ln in m:
+                path = ln.split()[-1] if len(ln.split()) >= 6 else ""
+                if "liboqs.so" in path:
+                    cands.append(pathlib.Path(path))
+    except Exception:  # noqa: BLE001
+        pass
+    for base in [os.environ.get("OQS_INSTALL_PATH"), str(pathlib.Path.home() / "_oqs")]:
+        if base:
+            for libdir in ("lib", "lib64"):
+                cands.append(pathlib.Path(base) / libdir / "liboqs.so")
+    for so in cands:
+        if so.exists():
+            inc = so.resolve().parent.parent / "include"
+            if (inc / "oqs" / "oqs.h").exists():
+                return inc, so
+    raise StageError("cannot find the liboqs headers and shared library (looked next to the library "
+                     "the Python binding loads, in $OQS_INSTALL_PATH and in ~/_oqs). Set "
+                     "OQS_INSTALL_PATH to the liboqs install prefix and run again.")
+
+
+def build_kem():
+    inc, so = find_liboqs()
+    sh(["gcc", "-O2", "-Wall", "-o", "bench_kem", "bench_kem.c", "-I" + str(inc), str(so),
+        "-Wl,-rpath," + str(so.parent)])
+    CON.log(f"KEM driver built against {so}")
+
+
+def kem_c(out: pathlib.Path, reps: int, warmup: int):
+    rows, missing = [], []
+    for alg in KEM_SETS:
+        r = subprocess.run(["./bench_kem", alg, str(reps), str(warmup)], capture_output=True, text=True)
+        if r.returncode == 3:
+            missing.append(alg)
+            continue
+        if r.returncode != 0:
+            raise StageError(f"bench_kem {alg} failed: {r.stderr.strip()}")
+        lines = r.stdout.strip().splitlines()
+        _, ver, pk, ct = lines[0].split(",")
+        for ln in lines[2:]:
+            op, rep, ns = ln.split(",")
+            rows.append({"param_set": alg, "liboqs_version": ver, "op": op, "rep": int(rep),
+                         "ns": int(ns), "pk_bytes": int(pk), "kem_ct_bytes": int(ct)})
+    if "ML-KEM-512" in missing:
+        raise StageError("the linked liboqs build does not enable ML-KEM-512")
+    with open(out / "results_kem_c.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=rows[0].keys())
+        w.writeheader(); w.writerows(rows)
+    lines = [f"ML-KEM session costs timed in C (liboqs {rows[0]['liboqs_version']}), "
+             f"median over {reps} repetitions after {warmup} warm-up, microseconds", ""]
+    lines.append(f"{'parameter set':14s}{'pk B':>7s}{'ct B':>7s}{'keygen':>10s}{'encaps':>10s}{'decaps':>10s}"
+                 f"{'encaps IQR':>16s}")
+    for alg in KEM_SETS:
+        sel = [r for r in rows if r["param_set"] == alg]
+        if not sel:
+            lines.append(f"{alg:14s}  not enabled in this liboqs build")
+            continue
+        med = {op: st.median([r["ns"] for r in sel if r["op"] == op]) / 1e3 for op in ("keygen", "encaps", "decaps")}
+        q = st.quantiles([r["ns"] / 1e3 for r in sel if r["op"] == "encaps"], n=4)
+        lines.append(f"{alg:14s}{sel[0]['pk_bytes']:7d}{sel[0]['kem_ct_bytes']:7d}{med['keygen']:10.1f}"
+                     f"{med['encaps']:10.1f}{med['decaps']:10.1f}{q[0]:8.1f}-{q[2]:.1f}")
+    write(out / "summary_kem_c.txt", "\n".join(lines) + "\n")
+    CON.log("KEM (C): " + "; ".join(l.split()[0] + " encaps " + l.split()[4] + " us"
+                                     for l in lines[3:] if "not enabled" not in l))
+    if missing:
+        CON.log("NOTE: not enabled in this liboqs build: " + ", ".join(missing))
 
 
 # --------------------------------------------------------------------------
@@ -753,7 +836,8 @@ def integrity(out: pathlib.Path, reps: int):
         return (min(vals), max(vals), len(vals)) if vals else (None, None, 0)
 
     problems = []
-    for name in ["results_kem.csv", "results_pipeline.csv", "results_c_latency.csv", "results_aead.csv"]:
+    for name in ["results_kem.csv", "results_kem_c.csv", "results_pipeline.csv", "results_c_latency.csv",
+                 "results_aead.csv"]:
         lo, hi, n = reps_in(out / name)
         ok = (lo == 0 and hi == reps - 1 and n == reps)
         CON.log(f"  {name}: reps 0..{hi} ({n} distinct) -> {'OK' if ok else 'STALE/INCOMPLETE'}")
@@ -804,6 +888,7 @@ def register_tasks(reps: int, warmup: int):
     PROG.add("corpora", 6)
     PROG.add("verify", 14)
     PROG.add("kem", 0.5)
+    PROG.add("kem-c", 0.5)
     for c in CORPORA:
         for n in REQUIRED_LENGTHS:
             for s in PY_COST_PER_CHAR:
@@ -829,16 +914,44 @@ def register_tasks(reps: int, warmup: int):
     PROG.add("package", 2)
 
 
+def kem_c_only(out: pathlib.Path, reps: int, warmup: int) -> int:
+    """Add results_kem_c.csv and summary_kem_c.txt to an existing results
+    directory and pack the two files (plus the build log) into one zip."""
+    if not out.is_dir():
+        print(f"no such results directory: {out}", file=sys.stderr)
+        return 2
+    CON.attach(out / "run_kem_c.log")
+    try:
+        CON.log(f"KEM-only run; reps={reps} warmup={warmup}; output: {out}")
+        build_kem()
+        kem_c(out, reps, warmup)
+        zpath = out.parent / f"{out.name}-kem-c.zip"
+        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+            for name in ["results_kem_c.csv", "summary_kem_c.txt", "run_kem_c.log"]:
+                z.write(out / name, pathlib.Path(out.name) / name)
+        CON.log(f"send this file: {zpath}")
+        return 0
+    except StageError as e:
+        CON.log("FAILED: " + str(e))
+        return 1
+    finally:
+        CON.close()
+
+
 # --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description="one-shot experiment runner")
     ap.add_argument("--reps", type=int, default=100)
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--outroot", default="results_phase3")
+    ap.add_argument("--kem-c-only", metavar="RESDIR",
+                    help="only build the KEM driver and add the C KEM timings to an existing results directory")
     args = ap.parse_args()
     if args.reps < 2:
         print("--reps must be at least 2", file=sys.stderr)
         return 2
+    if args.kem_c_only:
+        return kem_c_only(pathlib.Path(args.kem_c_only), args.reps, args.warmup)
 
     ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     out = ROOT / args.outroot / ts
@@ -856,6 +969,7 @@ def main() -> int:
         run_task("corpora", corpora, out)
         run_task("verify", verify, out)
         run_task("kem", kem_costs, out, args.reps, args.warmup)
+        run_task("kem-c", kem_c, out, args.reps, args.warmup)
         pipeline(out, args.reps, args.warmup)          # per-task progress inside
         c_latency(out, args.reps)                      # per-task progress inside
         run_task("aead", aead, out, args.reps)

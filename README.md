@@ -268,6 +268,13 @@ Added after the initial release (all verified cross-machine):
   in C at the exact encoded size of every scheme and cell, so the AEAD share
   of the per-message cost is measured, not inferred. Output: `results_aead.csv`.
   Needs `libssl-dev`.
+- `bench_kem.c` times ML-KEM-512/768/1024 key generation, encapsulation and
+  decapsulation through the liboqs C API, with the same clock and protocol as
+  the codec and AEAD drivers. It is built against the same liboqs shared
+  library that the Python binding loads (or `$OQS_INSTALL_PATH`, or
+  `~/_oqs`). Output: `results_kem_c.csv`, `summary_kem_c.txt`. To add these
+  timings to an existing results directory without rerunning everything:
+  `python3 run_all.py --kem-c-only <results dir>`.
 - `lora_airtime.py` converts the measured payload sizes into LoRaWAN EU868
   time on air (Semtech LoRa modem formula, 125 kHz, CR 4/5, SF7 and SF12,
   13-byte LoRaWAN framing, frames split at the data rate's maximum payload),
