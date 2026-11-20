@@ -4,6 +4,7 @@
 |--------------|-----------|---------------------------------------------|------------|----------|
 | heatshrink/  | heatshrink | 0.4.1 (as bundled in heatshrink2 0.15.0)   | ISC        | https://github.com/atomicobject/heatshrink |
 | unishox2/    | Unishox2  | tag 1.0.4, commit a5b950cb12712bf2d5a951c1bfe41b98b16d7d0e | Apache-2.0 | https://github.com/siara-cc/Unishox2 |
+| mlkem-native/ | mlkem-native | commit 0ba906cb14b1c241476134d7403a811b382ca498 (v1.2.0), the version vendored by liboqs 0.16.0; portable C sources only, native backends removed (see mlkem-native/PROVENANCE.txt) | Apache-2.0 OR ISC OR MIT | https://github.com/pq-code-package/mlkem-native |
 | (downloaded) | zstd      | 1.5.7 release tarball, SHA-256 eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3 | BSD-3-Clause / GPL-2.0 | https://github.com/facebook/zstd |
 
 The files are copied unmodified. zstd is not vendored because of its size:

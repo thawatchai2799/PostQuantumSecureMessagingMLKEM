@@ -1,0 +1,7 @@
+mlkem-native (https://github.com/pq-code-package/mlkem-native)
+commit 0ba906cb14b1c241476134d7403a811b382ca498 (tag v1.2.0), the version
+vendored by liboqs 0.16.0, whose x86_64 backend produced the host ML-KEM
+timings. Only the portable C sources are kept here (the aarch64, x86_64,
+riscv64, ppc64le and armv8.1-M native backends are removed); the monolithic
+build (mlkem/mlkem_native.c) therefore compiles the C backend, which is what
+runs on the Cortex-M4. License: Apache-2.0 OR ISC OR MIT (see LICENSE).
