@@ -21,6 +21,7 @@ and the capture file's name.
 """
 
 import argparse
+import re
 import csv
 import pathlib
 import statistics as st
@@ -66,14 +67,22 @@ def host_medians(path):
     return {k: st.median(v) for k, v in acc.items()}
 
 
-def summarize(path, host, outdir):
+def summarize(path, host, outdir, device=None):
     info, cells, kems, nulls, kem_check, end = parse(path)
     if end is None:
         raise SystemExit(f"{path}: no 'end' line; the capture is incomplete")
     hz = int(info.get("cpu_hz", "0") or 0)
-    dev = DEV.get(int(info.get("dev_id", "0") or 0), "dev_id " + info.get("dev_id", "?"))
+    if device:
+        dev = device
+    elif "dev_id" in info:
+        dev = DEV.get(int(info["dev_id"]), "dev_id " + info["dev_id"])
+    else:
+        # the firmware prints dev_id before the host opens the port, so a
+        # capture started with 'r' usually lacks it; fall back to the platform
+        dev = info.get("platform", "unknown")
     opt = info.get("opt", "?")
-    tag = "".join(ch if ch.isalnum() else "_" for ch in f"{dev}_{opt.lstrip('-')}_{pathlib.Path(path).stem}")
+    stamp = "_".join(re.findall(r"\d{6,}", pathlib.Path(path).stem)) or pathlib.Path(path).stem
+    tag = "".join(ch if ch.isalnum() else "_" for ch in f"{dev}_{opt.lstrip('-')}_{stamp}")
     us = (lambda c: c / hz * 1e6) if hz else (lambda c: float("nan"))
 
     bad = [c for c in cells if not c["ok"]] + [k for k in kems if not k["ok"]]
@@ -147,10 +156,11 @@ def main() -> int:
     ap.add_argument("captures", nargs="+")
     ap.add_argument("--outdir", default="data")
     ap.add_argument("--host-latency", default="data/results_c_latency.csv")
+    ap.add_argument("--device", default=None, help="board name for the output files (e.g. STM32F446RE)")
     args = ap.parse_args()
     host = host_medians(args.host_latency)
     for cap in args.captures:
-        summarize(cap, host, pathlib.Path(args.outdir))
+        summarize(cap, host, pathlib.Path(args.outdir), args.device)
     return 0
 
 

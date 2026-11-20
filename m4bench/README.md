@@ -67,9 +67,15 @@ the hand-optimized assembly of pqm4, which the paper cites alongside.
 3. `python m4_capture.py <port>` (needs `pip install pyserial`); the script
    sends the start command and saves `m4_raw_<date>.txt`. A run takes a few
    minutes; the Unishox2 encoder at 5,000 characters dominates.
-4. `python3 m4bench/m4_summary.py m4_raw_<date>.txt` from the repository
-   root writes `data/results_m4_*.csv`, `data/summary_m4_*.csv` and
-   `data/summary_m4_*.txt`.
+4. `python3 m4bench/m4_summary.py m4_raw_<date>.txt --device STM32F446RE`
+   from the repository root writes `data/results_m4_*.csv`,
+   `data/summary_m4_*.csv` and `data/summary_m4_*.txt`. The firmware prints
+   its device id before the host opens the port, so `--device` names the
+   board in the output files; without it the platform name is used.
+
+The captures behind the paper are `data/m4_raw_20261120_154548.txt` (-O2)
+and `data/m4_raw_20261120_155521.txt` (-Os), both from a NUCLEO-F446RE, with
+their summaries in `data/summary_m4_STM32F446RE_*`.
 
 Before flashing, `make -C m4bench host && m4bench/build/m4bench_host` runs the
 identical benchmark on the PC; its last line must be `end,<n>,0`.
