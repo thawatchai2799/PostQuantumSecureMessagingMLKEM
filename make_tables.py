@@ -27,6 +27,12 @@ Tables produced:
   TD   dictionary-size sensitivity (if results_dict_size.csv present)
   XO   crossover report: smallest length at which each zstd variant
        beats S2-dom, per corpus
+  TM   on-device codec cycles and stack (Cortex-M4), from
+       summary_m4_*_O2_*.csv (written by m4bench/m4_summary.py; looked up
+       in the results dir, then in data/)
+  TK   ML-KEM-512 on the device, from results_m4_kem_*_O2_*.csv
+  TX   what S1 discards and what the lossless S1-x costs, from
+       results_s1_lossless.csv (written by s1_lossless.py)
 """
 
 import argparse
@@ -244,6 +250,47 @@ def main() -> int:
                 rows.append([c.upper(), f"{n:,}", f"{g[(c, n, 'S3-zstd', 0)]:.3f}"] +
                             [f"{g[(c, n, 'S3d-'+cfg, s)]:.3f}" for s in sizes for cfg in ("dom", "en")])
         print(md(hdr, rows))
+
+    def find(pattern):
+        for d in (R, pathlib.Path("data")):
+            hits = sorted(d.glob(pattern))
+            if hits:
+                return hits[-1]
+        return None
+
+    m4 = find("summary_m4_*_O2_*.csv")
+    if m4:
+        rows = load(m4)
+        print(f"## TM - on-device codec cost ({m4.name}): median cycles per call, stack high-water mark (B)\n")
+        hdr = ["Scheme", "C1@120 enc", "dec", "C2@120 enc", "dec", "C1@2,000 enc", "dec", "Stack enc", "dec"]
+        g = {(r["corpus"], int(r["length"]), r["scheme"]): r for r in rows}
+        out = []
+        for sch in ["S1-6bit", "S2-dom-bit", "S2-dom-table", "S4-utf8", "S5-hs8", "S5-hs11", "S6-unishox"]:
+            row = [sch]
+            for c, n in (("c1", 120), ("c2", 120), ("c1", 2000)):
+                r = g.get((c, n, sch))
+                row += [f"{int(r['enc_cycles_med']):,}", f"{int(r['dec_cycles_med']):,}"] if r else ["N/A", "N/A"]
+            stk = [g[k] for k in g if k[2] == sch]
+            row += [max(int(r["enc_stack_max"]) for r in stk), max(int(r["dec_stack_max"]) for r in stk)]
+            out.append(row)
+        print(md(hdr, out))
+        kem = find("results_m4_kem_*_O2_*.csv")
+        if kem:
+            kr = load(kem)
+            print(f"## TK - ML-KEM-512 on the device ({kem.name}): median cycles, maximum stack (B)\n")
+            out = []
+            for op, lab in (("keygen", "KeyGen"), ("encaps", "Encaps"), ("decaps", "Decaps")):
+                cyc = sorted(int(r[f"{op}_cycles"]) for r in kr); stack = max(int(r[f"{op}_stack"]) for r in kr)
+                out.append([lab, f"{cyc[len(cyc) // 2]:,}", f"{stack:,}"])
+            print(md(["Operation", "Cycles (median)", "Stack (B)"], out))
+
+    sx = find("results_s1_lossless.csv")
+    if sx:
+        rows = load(sx)
+        print("## TX - what S1 discards and what the lossless S1-x costs (bits/char)\n")
+        out = [[r["corpus"].upper(), f"{int(r['length']):,}", r["dropped_pct"], r["case_folded_pct_of_letters"],
+                "N/A" if r["corpus"] == "c2" else f"{float(r['s1_drop_bpc']):.3f}", f"{float(r['s1x_bpc']):.3f}", f"{float(r['utf8_bpc']):.3f}"] for r in rows]
+        print(md(["Corpus", "Length", "Dropped (%)", "Letters folded (%)", "S1 drop mode", "S1-x", "UTF-8"], out))
 
     print("## XO - crossover report (smallest length at which scheme beats S2-dom)\n")
     for c in corpora:

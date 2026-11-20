@@ -43,6 +43,10 @@ m4bench/                 On-device benchmark for STM32 Nucleo-64 Cortex-M4
                          boards: cycle counts and stack use of every codec and
                          of ML-KEM-512, with device-side checks against the
                          host results (see m4bench/README.md)
+zstd_mem.c               Working memory of libzstd for the S3/S3d configurations,
+                         measured with the library's own accounting -> data/zstd_mem.txt
+s1_lossless.py           What S1 discards and what a lossless S1 (S1-x) costs
+                         -> results_s1_lossless.csv (copy in data/)
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
 s2_tables.h              Auto-generated canonical Huffman tables (do not edit)
 gen_s2_tables.py         Regenerates s2_tables.h from the training corpora
@@ -61,7 +65,10 @@ run_phase3.sh            Orchestrator: build -> corpus -> verify -> measure
                          -> summarize -> integrity check
 analyze.py               Summarizes harness CSVs (mean/SD)
 make_figures.py          Regenerates the paper's figures from data/
-data/                    Raw measurement CSVs reported in the paper (n=100)
+data/                    Raw measurement CSVs reported in the paper (n=100),
+                         the on-device captures and summaries (m4_raw_*.txt,
+                         summary_m4_*, results_m4_*), zstd_mem.txt and
+                         results_s1_lossless.csv
 figures/                 Generated figures
 ```
 
@@ -299,5 +306,28 @@ Every record carries a pass flag: the decode reproduced the input and the
 encoded size equals the host's size for that input, and a derandomized
 ML-KEM key exchange is checked against a digest cross-checked against
 liboqs. `m4bench/README.md` has the build, flash and capture steps;
-`m4_summary.py` writes `data/summary_m4_*.txt` and `.csv`.
+`m4_summary.py` writes `data/summary_m4_*.txt` and `.csv`. The captures used
+in the paper (`data/m4_raw_20261120_*.txt`, -O2 and -Os) and their summaries
+are included.
+
+## libzstd working memory
+
+`zstd_mem.c` reports the run-time memory of libzstd for the S3 and S3d
+configurations with the library's own accounting (`ZSTD_sizeof_CCtx`,
+`ZSTD_sizeof_DCtx`, `ZSTD_sizeof_CDict`, `ZSTD_sizeof_DDict`) after a real
+compression and decompression of each C1 slice, set up exactly as in
+`bench_lib.c`. Build it against the pinned libzstd 1.5.7 and run
+
+    ./zstd_mem s3_dicts/dict_en_2048.zdict corpus/c1/c1_*.txt
+
+The output used in the paper is `data/zstd_mem.txt`.
+
+## S1 made lossless (S1-x)
+
+`s1_lossless.py` quantifies what the 6-bit static code discards (characters
+dropped, letters case-folded) and prices the smallest lossless extension that
+stays within the code's reserved code space: a case-lock toggle (code 61) and
+an escape code (62) followed by one raw byte. It needs no measurement run;
+it reads the corpus files and writes `results_s1_lossless.csv` (copied to
+`data/`).
 
