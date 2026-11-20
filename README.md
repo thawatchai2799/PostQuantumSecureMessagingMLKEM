@@ -35,9 +35,14 @@ verify_lib.py            Byte-exact check: bench_lib output == Python encoders
 make_slices.py           5 disjoint input slices per corpus and length (timing)
 make_c5_intel.py         Corpus C5: real sensor readings (Intel Berkeley Lab
                          data set, data.txt.gz must be downloaded)
-third_party/             Vendored heatshrink 0.4.1 and Unishox2 1.0.4 (unmodified;
-                         see third_party/README.md); zstd 1.5.7 is downloaded and
+third_party/             Vendored heatshrink 0.4.1, Unishox2 1.0.4 and the
+                         portable C part of mlkem-native (unmodified; see
+                         third_party/README.md); zstd 1.5.7 is downloaded and
                          checked against a pinned SHA-256 by run_all.py
+m4bench/                 On-device benchmark for STM32 Nucleo-64 Cortex-M4
+                         boards: cycle counts and stack use of every codec and
+                         of ML-KEM-512, with device-side checks against the
+                         host results (see m4bench/README.md)
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
 s2_tables.h              Auto-generated canonical Huffman tables (do not edit)
 gen_s2_tables.py         Regenerates s2_tables.h from the training corpora
@@ -281,3 +286,18 @@ Added after the initial release (all verified cross-machine):
   including the 768-byte ML-KEM-512 ciphertext sent once per session. This is
   a calculation from payload sizes, not an energy measurement.
   Output: `results_airtime.csv`.
+
+## On-device measurements (Cortex-M4)
+
+`m4bench/` is a bare-metal benchmark for the NUCLEO-F446RE and NUCLEO-F411RE
+boards. It runs the same codec sources on the same inputs as the host timing
+(slice 0 of each cell, 120 to 5,000 characters), counts cycles with the DWT
+cycle counter at 16 MHz with zero flash wait states, measures the stack
+high-water mark of every call by stack painting, and times ML-KEM-512
+(mlkem-native, C backend; the same library liboqs 0.16.0 uses on the host).
+Every record carries a pass flag: the decode reproduced the input and the
+encoded size equals the host's size for that input, and a derandomized
+ML-KEM key exchange is checked against a digest cross-checked against
+liboqs. `m4bench/README.md` has the build, flash and capture steps;
+`m4_summary.py` writes `data/summary_m4_*.txt` and `.csv`.
+
