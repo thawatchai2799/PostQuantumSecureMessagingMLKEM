@@ -1,0 +1,11 @@
+domain,artifact,training_bytes,samples,artifact_bytes,median_ms,min_ms,max_ms
+en,S2 Huffman table,30395,1,257,1.421,1.118,2.358
+en,S3d zstd dictionary,30395,238,2048,13.308,11.882,25.416
+c2,S2 Huffman table,30076,1,257,1.384,1.206,1.942
+c2,S3d zstd dictionary,30076,249,2048,12.779,10.434,14.747
+c3,S2 Huffman table,30000,1,257,1.91,1.455,4.619
+c3,S3d zstd dictionary,30000,235,2048,13.783,11.537,20.475
+c4,S2 Huffman table,30000,1,257,1.323,1.231,2.271
+c4,S3d zstd dictionary,30000,824,2048,12.787,11.824,14.381
+c5,S2 Huffman table,30003,1,257,1.266,1.06,2.337
+c5,S3d zstd dictionary,30003,448,2048,11.498,10.741,12.53

@@ -1,0 +1,10 @@
+step,median_us,min_us,max_us
+# input corpus/c1/c1_120.txt (122 bytes), dictionary 2048 bytes, 201 repetitions
+S1+S2 codec_init (3 Huffman domains, canonical code + 9-bit LUT),7.54,7.22,44.20
+S5 heatshrink alloc encoder+decoder (2^8),0.04,0.04,0.90
+S5 heatshrink alloc encoder+decoder (2^11),0.08,0.08,5.63
+S3 ZSTD_createCCtx + ZSTD_createDCtx,1.59,1.58,17.15
+S3 first compression on a fresh context (allocates the workspace),3.90,3.77,30.80
+S3d ZSTD_createCDict (2,048 B dictionary, level 3),6.98,6.76,29.56
+S3d ZSTD_createDDict (2,048 B dictionary),4.48,4.36,14.27
+S3d first compression on a fresh context with the dictionary attached,1.03,1.01,9.03
