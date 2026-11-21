@@ -47,6 +47,10 @@ zstd_mem.c               Working memory of libzstd for the S3/S3d configurations
                          measured with the library's own accounting -> data/zstd_mem.txt
 s1_lossless.py           What S1 discards and what a lossless S1 (S1-x) costs
                          -> results_s1_lossless.csv (copy in data/)
+artifact_cost.py         Training time of the pre-shared Huffman tables and zstd
+                         dictionaries per domain -> artifact_cost.csv (copy in data/)
+init_cost.c              One-time start-up cost of each codec on the host
+                         -> data/init_cost.txt
 bench_main.c             CLI driver for the C codecs (encode/decode/time)
 s2_tables.h              Auto-generated canonical Huffman tables (do not edit)
 gen_s2_tables.py         Regenerates s2_tables.h from the training corpora
@@ -321,6 +325,28 @@ compression and decompression of each C1 slice, set up exactly as in
     ./zstd_mem s3_dicts/dict_en_2048.zdict corpus/c1/c1_*.txt
 
 The output used in the paper is `data/zstd_mem.txt`.
+
+## Cost of the pre-shared artifacts and of codec initialization
+
+`artifact_cost.py` times the one-time, server-side training of the pre-shared
+artifacts per domain (Huffman table from `HuffmanTable.train`, zstd dictionary
+from `zstandard.train_dictionary` exactly as `s3_dict.build_dicts` does) and
+records what has to be distributed (257 B and 2,048 B). `init_cost.c` times
+what each codec does once at start-up on the host: `codec_init()` (6-bit
+tables, canonical codes and 9-bit lookup tables for the three Huffman
+domains), heatshrink's state allocation, libzstd context creation and its
+first compression (which allocates the workspace), and the creation of the
+dictionary objects. Build and run from the repository root after `run_all.py`
+has built libzstd and the heatshrink objects:
+
+    gcc -O2 -Wall -o init_cost init_cost.c codec.c build/heatshrink_encoder.o \
+        build/heatshrink_decoder.o build/zstd-1.5.7/lib/libzstd.a \
+        -Ibuild/zstd-1.5.7/lib -Ithird_party/heatshrink
+    ./init_cost s3_dicts/dict_en_2048.zdict corpus/c1/c1_120.txt > data/init_cost.txt
+    python3 artifact_cost.py && cp artifact_cost.csv data/
+
+The outputs used in the paper are `data/init_cost.txt` and
+`data/artifact_cost.csv`.
 
 ## S1 made lossless (S1-x)
 
